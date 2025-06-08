@@ -1,10 +1,11 @@
 fastapi
 uvicorn[standard]
 langchain
-langchain-google-genai
 sentence-transformers
 faiss-cpu
 PyMuPDF
 numpy
 pydantic
 python-dotenv
+google-generativeai
+langchain-google-genai
