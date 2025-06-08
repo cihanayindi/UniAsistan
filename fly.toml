@@ -7,7 +7,7 @@ app = 'uniasistan-api'
 primary_region = 'fra'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "C:\Users\cihan\Desktop\UniAsistan\Dockerfile"
 
 [http_service]
   internal_port = 8080
