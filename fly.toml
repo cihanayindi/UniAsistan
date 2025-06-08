@@ -7,7 +7,7 @@ app = 'uniasistan-api'
 primary_region = 'fra'
 
 [build]
-  builder = "dockerfile"
+  builder = "Dockerfile"
 
 [http_service]
   internal_port = 8080
