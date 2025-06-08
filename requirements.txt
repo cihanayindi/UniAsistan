@@ -8,3 +8,7 @@ fitz
 json
 re
 requests
+fastapi
+uvicorn
+langchain-google-genai
+pydantic
