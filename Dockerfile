@@ -21,4 +21,4 @@ COPY . .
 
 # Uygulamayı başlatacak komutu belirt
 EXPOSE 8080
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD python -c "from main import startup_event; startup_event()" && uvicorn main:app --host 0.0.0.0 --port 8080
