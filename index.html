@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniAsistan - Sohbet</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Ana fontu ve yumuşak kaydırma efektini uygula */
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Kaydırma çubuğu stilleri */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4338ca;
+        }
+        /* Yazıyor animasyonu için stil */
+        .typing-indicator span {
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1.0);
+            }
+        }
+        /* Sohbete özel border-radius */
+        .user-bubble {
+            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+        }
+        .bot-bubble {
+            border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl h-[90vh] bg-white rounded-2xl shadow-2xl shadow-indigo-200/50 flex flex-col overflow-hidden">
+        <!-- Üst Başlık Alanı (Gradient) -->
+        <div class="p-4 bg-gradient-to-r from-indigo-600 to-blue-500 text-white flex items-center space-x-3 shadow-lg">
+            <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                 <h1 class="text-xl font-bold">UniAsistan</h1>
+                 <p class="text-sm opacity-80">ADÜ Öğrenci İşleri Yardım Botu</p>
+            </div>
+        </div>
+
+        <!-- Sohbet Alanı -->
+        <div id="chat-container" class="flex-1 p-6 overflow-y-auto bg-slate-50">
+            <!-- Başlangıç Ekranı -->
+            <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center">
+                 <div class="bg-gradient-to-br from-indigo-500 to-blue-500 text-white w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-300/80">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.43c.097.452.194.904.291 1.356a15.936 15.936 0 01-1.22 3.112 2.25 2.25 0 01-2.099 1.476H7.5a2.25 2.25 0 01-2.1-1.476 15.936 15.936 0 01-1.22-3.112c.097-.452.194-.904.29-1.356M12 15.75V12m0 0V8.25m0 3.75H9.75m2.25 0H14.25" />
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                 </div>
+                 <h2 class="text-2xl font-semibold text-slate-800">Merhaba!</h2>
+                 <p class="text-slate-500 mt-1">Size nasıl yardımcı olabilirim?</p>
+            </div>
+
+            <!-- Konuşma Geçmişi (Başlangıçta gizli) -->
+            <div id="chat-history" class="hidden space-y-5">
+                <!-- Mesajlar buraya eklenecek -->
+            </div>
+        </div>
+        
+        <!-- Yazı Yazma Alanı -->
+        <div class="p-4 bg-white/80 backdrop-blur-sm border-t border-slate-200">
+            <!-- Sıkça Sorulan Sorular Butonları -->
+            <div id="faq-buttons" class="flex flex-wrap gap-2 mb-4 justify-center">
+                <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Staj yönergesi</button>
+                <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Ders kayıtları</button>
+                <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Mezuniyet şartları</button>
+            </div>
+            
+            <!-- Soru Giriş Formu -->
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="message-input" placeholder="Sorunuzu buraya yazın..." class="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm" autocomplete="off">
+                <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-indigo-200/80 hover:shadow-indigo-300/80">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </form>
+
+             <!-- Footer Alanı: Geliştirici ve GitHub Linkleri -->
+            <div class="text-center mt-4 flex items-center justify-center space-x-4">
+                <a href="https://www.cihanayindi.com" target="_blank" rel="noopener noreferrer" title="Geliştirici" class="text-slate-400 hover:text-indigo-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                </a>
+                <a href="https://github.com/cihanayindi/UniAsistan" target="_blank" rel="noopener noreferrer" title="GitHub Deposu" class="text-slate-400 hover:text-indigo-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elementlerini seç
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const chatHistory = document.getElementById('chat-history');
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const faqButtonsContainer = document.getElementById('faq-buttons');
+        const submitButton = chatForm.querySelector('button[type="submit"]');
+
+        let isChatStarted = false;
+        
+        // Sıkça Sorulan Sorular için tam metinleri bir map'te tutalım
+        const faqQuestions = {
+            "Staj yönergesi": "Staj yönergesinin amacı nedir?",
+            "Ders kayıtları": "Ders kayıtları ne zaman?",
+            "Mezuniyet şartları": "Mezuniyet için gerekenler nelerdir?"
+        };
+
+        // Form gönderildiğinde çalışacak fonksiyon
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const question = messageInput.value.trim();
+            if (question) {
+                handleUserQuestion(question);
+                messageInput.value = '';
+            }
+        });
+
+        // Sıkça sorulan sorular butonlarına tıklanınca çalışacak fonksiyon
+        faqButtonsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('faq-btn')) {
+                const buttonText = e.target.innerText;
+                const question = faqQuestions[buttonText] || buttonText; // Map'ten tam soruyu al
+                handleUserQuestion(question);
+            }
+        });
+
+        // Kullanıcının sorusunu işleyen ana fonksiyon
+        function handleUserQuestion(question) {
+            if (!isChatStarted) {
+                welcomeScreen.classList.add('hidden');
+                chatHistory.classList.remove('hidden');
+                faqButtonsContainer.classList.add('hidden');
+                isChatStarted = true;
+            }
+            appendMessage(question, 'user');
+            showTypingIndicator();
+            fetchBotResponse(question);
+        }
+
+        // Mesajları sohbet ekranına ekleyen fonksiyon
+        function appendMessage(message, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('flex', 'w-full', 'items-end');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('p-4', 'max-w-xs', 'sm:max-w-md', 'md:max-w-lg', 'shadow-md');
+            messageBubble.textContent = message;
+
+            if (sender === 'user') {
+                messageWrapper.classList.add('justify-end');
+                messageBubble.classList.add('user-bubble', 'bg-gradient-to-br', 'from-indigo-500', 'to-blue-500', 'text-white', 'shadow-indigo-200/80');
+            } else {
+                messageWrapper.classList.add('justify-start');
+                 // Bot ikonu ekleyelim
+                const botIcon = document.createElement('div');
+                botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
+                messageWrapper.appendChild(botIcon);
+                messageBubble.classList.add('bot-bubble', 'bg-white', 'text-slate-800', 'shadow-slate-200/80');
+            }
+            
+            messageWrapper.appendChild(messageBubble);
+            chatHistory.appendChild(messageWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // "Yazıyor..." göstergesini ekleyen fonksiyon
+        function showTypingIndicator() {
+            submitButton.disabled = true;
+            messageInput.disabled = true;
+            const indicatorWrapper = document.createElement('div');
+            indicatorWrapper.id = 'typing-indicator';
+            indicatorWrapper.classList.add('flex', 'justify-start', 'w-full', 'items-end');
+            indicatorWrapper.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 mr-3 flex-shrink-0"></div>
+                <div class="bg-white bot-bubble shadow-md p-4 flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
+                </div>
+            `;
+            chatHistory.appendChild(indicatorWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // "Yazıyor..." göstergesini kaldıran fonksiyon
+        function hideTypingIndicator() {
+            submitButton.disabled = false;
+            messageInput.disabled = false;
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // BOT CEVABI İÇİN API İSTEĞİ
+        async function fetchBotResponse(question) {
+            // Burayı kendi API endpoint'inizle değiştirin.
+            // const API_URL = 'https://sizin-render-uygulamaniz.onrender.com/ask';
+            // ... API istek kodları ...
+
+            // Geçici test kodu
+            setTimeout(() => {
+                hideTypingIndicator();
+                const fakeAnswer = `"${question}" sorunuza istinaden, ilgili yönetmelikler ve belgeler taranarak size en doğru cevap hazırlanmaktadır. Bu bir test yanıtıdır.`;
+                appendMessage(fakeAnswer, 'bot');
+            }, 2500); // 2.5 saniye bekle
+        }
+    </script>
+</body>
+</html>
+<!-- Bu HTML dosyası, UniAsistan sohbet uygulamasının temel yapısını ve stilini içerir. -->
+<!-- Tailwind CSS ile responsive ve modern bir tasarım sunar. -->

@@ -3,3 +3,8 @@ langchain
 sentence-transformers
 faiss-cpu
 numpy
+os
+fitz
+json
+re
+requests
