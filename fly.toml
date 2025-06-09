@@ -22,8 +22,6 @@ primary_region = 'fra'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 512
-  swap_size_mb = 512
-
 
 [mounts]
   source = "uniasistan_data"
