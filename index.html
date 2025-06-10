@@ -234,18 +234,45 @@
             }
         }
         
-        // BOT CEVABI İÇİN API İSTEĞİ
+        // --- BU BÖLÜMÜ GÜNCELLİYORUZ ---
+        // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            // Burayı kendi API endpoint'inizle değiştirin.
-            // const API_URL = 'https://sizin-render-uygulamaniz.onrender.com/ask';
-            // ... API istek kodları ...
+            const API_URL = 'https://uniasistan.fly.dev/ask'; // Kendi API adresiniz
 
-            // Geçici test kodu
-            setTimeout(() => {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question 
+                    }),
+                });
+
+                if (!response.ok) {
+                    // Sunucudan bir hata dönerse (500, 404 vs.)
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `API hatası: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                hideTypingIndicator(); // "Yazıyor..." göstergesini gizle
+
+                // Cevap ve kaynakları birleştirerek daha zengin bir metin oluşturuyoruz
+                let fullAnswer = data.answer;
+                if (data.sources && data.sources.length > 0) {
+                    const uniqueSources = [...new Set(data.sources)]; // Kaynakları tekilleştir
+                    fullAnswer += "\n\n**Kaynaklar:** " + uniqueSources.join(', ');
+                }
+                appendMessage(fullAnswer, 'bot'); // Gelen cevabı ekrana yazdır
+
+            } catch (error) {
+                console.error("İstek sırasında hata oluştu:", error);
                 hideTypingIndicator();
-                const fakeAnswer = `"${question}" sorunuza istinaden, ilgili yönetmelikler ve belgeler taranarak size en doğru cevap hazırlanmaktadır. Bu bir test yanıtıdır.`;
-                appendMessage(fakeAnswer, 'bot');
-            }, 2500); // 2.5 saniye bekle
+                appendMessage("Üzgünüm, bir sorunla karşılaştım. Lütfen daha sonra tekrar deneyin. Detay: " + error.message, 'bot');
+            }
         }
     </script>
 </body>
