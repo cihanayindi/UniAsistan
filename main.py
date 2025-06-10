@@ -126,28 +126,29 @@ def veritabani_olustur():
 # GÜNCELLENMİŞ STARTUP FONKSİYONU
 @app.on_event("startup")
 def startup_event():
-    print("Uygulama başlatılıyor... Modeller ve veritabanı yükleniyor.")
-    load_dotenv()
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("UYARI: GEMINI_API_KEY bulunamadı. Üretken model çalışmayacak.")
-    else:
-        genai.configure(api_key=api_key)
-        state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
-        print("Gemini modeli başarıyla yapılandırıldı.")
+    print("!!! TEST MODU: Modeller ve veritabanı YÜKLENMİYOR !!!")
+    # print("Uygulama başlatılıyor... Modeller ve veritabanı yükleniyor.")
+    # load_dotenv()
+    # api_key = os.getenv("GEMINI_API_KEY")
+    # if not api_key:
+    #     print("UYARI: GEMINI_API_KEY bulunamadı. Üretken model çalışmayacak.")
+    # else:
+    #     genai.configure(api_key=api_key)
+    #     state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
+    #     print("Gemini modeli başarıyla yapılandırıldı.")
 
-    # Yerelde oluşturulmuş dosyaların varlığını kontrol edip direkt yüklüyoruz.
-    if VECTOR_DB_PATH.exists() and METADATA_PATH.exists():
-        print("FAISS veritabanı ve embedding modeli yükleniyor...")
-        state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
-        with open(METADATA_PATH, 'r', encoding='utf-8') as f:
-            state["chunks_metadata"] = json.load(f)
-        state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_NAME)
-        print("Tüm modeller ve veritabanı başarıyla yüklendi.")
-    else:
-        # Sunucuda bu dosyalar yoksa uygulama çalışamaz.
-        print(f"HATA: Vektör veritabanı dosyaları bulunamadı! ({VECTOR_DB_PATH})")
-        print("Lütfen dosyaları yerelde oluşturup .dockerignore'dan 'vektor' satırını kaldırdığınızdan emin olarak tekrar deploy edin.")
+    # # Yerelde oluşturulmuş dosyaların varlığını kontrol edip direkt yüklüyoruz.
+    # if VECTOR_DB_PATH.exists() and METADATA_PATH.exists():
+    #     print("FAISS veritabanı ve embedding modeli yükleniyor...")
+    #     state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
+    #     with open(METADATA_PATH, 'r', encoding='utf-8') as f:
+    #         state["chunks_metadata"] = json.load(f)
+    #     state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    #     print("Tüm modeller ve veritabanı başarıyla yüklendi.")
+    # else:
+    #     # Sunucuda bu dosyalar yoksa uygulama çalışamaz.
+    #     print(f"HATA: Vektör veritabanı dosyaları bulunamadı! ({VECTOR_DB_PATH})")
+    #     print("Lütfen dosyaları yerelde oluşturup .dockerignore'dan 'vektor' satırını kaldırdığınızdan emin olarak tekrar deploy edin.")
 
 # --- 4. API ENDPOINT'LERİ ---
 
