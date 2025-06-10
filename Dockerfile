@@ -1,24 +1,23 @@
-# Python'un stabil bir sürümünü temel al
+# Python'un resmi, hafif bir sürümünü temel alarak başlıyoruz.
 FROM python:3.11-slim
 
-# Çalışma dizinini /app olarak ayarla
-WORKDIR /app
+# Çalışma ortamı olarak /code klasörünü ayarlıyoruz.
+WORKDIR /code
 
-# Önce sadece requirements.txt dosyasını kopyala
+#requirements.txt dosyasını kopyalayıp bağımlılıkları yüklüyoruz.
+# Bu adımı ayrı yapmak, Docker'ın katman önbellekleme özelliğinden yararlanarak
+# sonraki build'leri hızlandırır.
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# PyTorch'u CPU-only olarak kurmak için pip'i güncelle ve özel komutu çalıştır.
-# Bu, en yaygın CUDA hatasını çözer.
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
-# Geri kalan kütüphaneleri requirements.txt'den kur
-# Bu komut, torch'un zaten kurulu olduğunu görecek ve onu atlayacaktır.
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Geri kalan tüm proje dosyalarını kopyala
+# Projenin geri kalan tüm dosyalarını /code klasörüne kopyalıyoruz.
 COPY . .
 
-# Uygulamayı başlatacak komutu belirt
+# Fly.io'nun uygulamaya erişeceği portu belirtiyoruz.
 EXPOSE 8080
-CMD python -c "from main import startup_event; startup_event()" && uvicorn main:app --host 0.0.0.0 --port 8080
+
+# Uygulamayı çalıştıracak komut.
+# main:app -> main.py dosyasındaki "app" isimli FastAPI uygulamasını çalıştır.
+# --host 0.0.0.0 -> Uygulamanın dışarıdan gelen isteklere açık olmasını sağlar.
+# --port 8080 -> Fly.io'nun beklediği port.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
