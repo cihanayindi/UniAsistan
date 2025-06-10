@@ -20,11 +20,16 @@ from dotenv import load_dotenv
 
 # --- 1. AYARLAR VE SABİTLER ---
 
-DATA_PATH = Path("/data")
-PDF_SOURCE_PATH = Path("source_documents")
-DOCUMENTS_PATH = DATA_PATH / "documents"
-VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
-METADATA_PATH = DATA_PATH / "chunks_metadata.json"
+# Göreceli yolları kullanıyoruz. Dockerfile'daki WORKDIR /code olduğu için
+# bu yollar /code/vektor/dosya.bin gibi çalışacaktır.
+VECTOR_DIR = Path("vektor")
+VECTOR_DB_PATH = VECTOR_DIR / "faiss_index.bin"
+METADATA_PATH = VECTOR_DIR / "chunks_metadata.json"
+
+# Bu sabitlere artık sunucu üzerinde ihtiyacımız yok
+# PDF_SOURCE_PATH = Path("source_documents")
+# DOCUMENTS_PATH = DATA_PATH / "documents"
+
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
 GENERATIVE_MODEL_NAME = 'gemini-1.5-flash'
 
@@ -118,6 +123,7 @@ def veritabani_olustur():
         
     print("Veritabanı oluşturma işlemi başarıyla tamamlandı!")
 
+# GÜNCELLENMİŞ STARTUP FONKSİYONU
 @app.on_event("startup")
 def startup_event():
     print("Uygulama başlatılıyor... Modeller ve veritabanı yükleniyor.")
@@ -130,9 +136,7 @@ def startup_event():
         state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
         print("Gemini modeli başarıyla yapılandırıldı.")
 
-    if not VECTOR_DB_PATH.exists() or not METADATA_PATH.exists():
-        veritabani_olustur()
-
+    # Yerelde oluşturulmuş dosyaların varlığını kontrol edip direkt yüklüyoruz.
     if VECTOR_DB_PATH.exists() and METADATA_PATH.exists():
         print("FAISS veritabanı ve embedding modeli yükleniyor...")
         state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
@@ -141,8 +145,10 @@ def startup_event():
         state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_NAME)
         print("Tüm modeller ve veritabanı başarıyla yüklendi.")
     else:
-        print("UYARI: Veritabanı dosyaları bulunamadığı için arama fonksiyonu çalışmayacak.")
-        
+        # Sunucuda bu dosyalar yoksa uygulama çalışamaz.
+        print(f"HATA: Vektör veritabanı dosyaları bulunamadı! ({VECTOR_DB_PATH})")
+        print("Lütfen dosyaları yerelde oluşturup .dockerignore'dan 'vektor' satırını kaldırdığınızdan emin olarak tekrar deploy edin.")
+
 # --- 4. API ENDPOINT'LERİ ---
 
 @app.get("/", status_code=status.HTTP_200_OK, tags=["Sağlık Kontrolü"])
