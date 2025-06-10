@@ -30,7 +30,8 @@ METADATA_PATH = VECTOR_DIR / "chunks_metadata.json"
 # PDF_SOURCE_PATH = Path("source_documents")
 # DOCUMENTS_PATH = DATA_PATH / "documents"
 
-EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
+# Modelin adını değil, yereldeki klasörün yolunu kullanacağız
+EMBEDDING_MODEL_PATH = 'sbert_model' 
 GENERATIVE_MODEL_NAME = 'gemini-1.5-flash'
 
 # --- 2. FASTAPI UYGULAMASI VE VERİ MODELLERİ ---
@@ -136,13 +137,15 @@ def startup_event():
         state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
         print("Gemini modeli başarıyla yapılandırıldı.")
 
-    # Yerelde oluşturulmuş dosyaların varlığını kontrol edip direkt yüklüyoruz.
     if VECTOR_DB_PATH.exists() and METADATA_PATH.exists():
         print("FAISS veritabanı ve embedding modeli yükleniyor...")
         state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
         with open(METADATA_PATH, 'r', encoding='utf-8') as f:
             state["chunks_metadata"] = json.load(f)
-        state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        
+        # BU SATIRI GÜNCELLİYORUZ
+        state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_PATH) 
+        
         print("Tüm modeller ve veritabanı başarıyla yüklendi.")
     else:
         # Sunucuda bu dosyalar yoksa uygulama çalışamaz.
