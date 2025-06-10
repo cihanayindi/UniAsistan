@@ -126,7 +126,6 @@ def veritabani_olustur():
 # GÜNCELLENMİŞ STARTUP FONKSİYONU
 @app.on_event("startup")
 def startup_event():
-    print("!!! TEST MODU: Modeller ve veritabanı YÜKLENMİYOR !!!")
     print("Uygulama başlatılıyor... Modeller ve veritabanı yükleniyor.")
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")

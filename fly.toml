@@ -16,6 +16,6 @@ primary_region = 'fra'
   min_machines_running = 0
 
 [[vm]]
-  memory = 1024
+  memory = 2048
   cpu_kind = 'shared'
   cpus = 1
