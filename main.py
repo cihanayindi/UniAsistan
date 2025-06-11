@@ -1,3 +1,5 @@
+# main.py dosyasının tam ve hatasız son hali
+
 # --- Gerekli Kütüphanelerin Import Edilmesi ---
 import os
 import fitz
@@ -15,22 +17,15 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 # --- 1. AYARLAR VE SABİTLER ---
-
-# Kalıcı disk (/data) üzerindeki yolları tanımlıyoruz
 DATA_PATH = Path("/data")
 VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
-MODEL_PATH = DATA_PATH / "sbert_model"  # Modelin kalıcı diskteki yeri
-
-# Orjinal PDF'lerin Docker imajı içindeki yeri
+MODEL_PATH = DATA_PATH / "sbert_model"
 PDF_SOURCE_PATH = Path("source_documents")
-
 GENERATIVE_MODEL_NAME = 'gemini-1.5-flash'
 
-
-# --- 2. FASTAPI UYGULAMASI VE VERİ MODELLERİ ---
-# (Bu kısım aynı kalıyor)
+# --- 2. FASTAPI UYGULAMASI ---
 class QuestionRequest(BaseModel):
     question: str
 
@@ -43,37 +38,44 @@ app = FastAPI(
     description="Adnan Menderes Üniversitesi için RAG tabanlı yardım asistanı.",
     version="1.0.0"
 )
+
 origins = ["*"]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-state = { "embedding_model": None, "faiss_index": None, "chunks_metadata": None, "generative_model": None }
-
+state = {
+    "embedding_model": None,
+    "faiss_index": None,
+    "chunks_metadata": None,
+    "generative_model": None,
+}
 
 # --- 3. VERİ İŞLEME VE MODEL YÜKLEME ---
-
 def metni_temizle(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
-# Bu fonksiyon artık sadece gerektiğinde, uygulama başlangıcında çağrılacak.
 def veritabani_ve_model_olustur():
     print("Kalıcı diskte veritabanı veya model bulunamadı. Sıfırdan oluşturuluyor...")
-    
-    # Modelin indirilmesi
+    DATA_PATH.mkdir(exist_ok=True)
+
     if not MODEL_PATH.exists():
         print(f"'{EMBEDDING_MODEL_NAME}' modeli indiriliyor ve '{MODEL_PATH}' yoluna kaydediliyor...")
         model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-        model.save(MODEL_PATH)
+        model.save(str(MODEL_PATH))
         print("Model başarıyla indirildi.")
-    
-    # Veritabanının oluşturulması
-    DATA_PATH.mkdir(exist_ok=True)
+
     metinler_ve_kaynaklar = []
-    pdf_files = list(PDF_SOURCE_PATH.glob("*.pdf"))
-    if not pdf_files:
-        print("UYARI: İşlenecek PDF dosyası bulunamadı.")
+    if not PDF_SOURCE_PATH.is_dir():
+        print(f"HATA: Kaynak PDF klasörü '{PDF_SOURCE_PATH}' bulunamadı!")
         return
-    for dosya_yolu in pdf_files:
+    
+    for dosya_yolu in PDF_SOURCE_PATH.glob("*.pdf"):
         print(f"'{dosya_yolu.name}' dosyası işleniyor...")
         doc = fitz.open(dosya_yolu)
         temiz_metin = " ".join([metni_temizle(page.get_text()) for page in doc])
@@ -82,34 +84,30 @@ def veritabani_ve_model_olustur():
             metinler_ve_kaynaklar.append({'kaynak': dosya_yolu.name, 'icerik': temiz_metin})
     
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    tum_parcalar = []
-    for dokuman in metinler_ve_kaynaklar:
-        parcalar = text_splitter.split_text(dokuman['icerik'])
-        for parca in parcalar:
-            tum_parcalar.append({'kaynak': dokuman['kaynak'], 'icerik': parca})
+    tum_parcalar = [
+        {'kaynak': dokuman['kaynak'], 'icerik': parca}
+        for dokuman in metinler_ve_kaynaklar
+        for parca in text_splitter.split_text(dokuman['icerik'])
+    ]
 
     if not tum_parcalar:
         print("UYARI: Hiç parça (chunk) oluşturulamadı.")
         return
         
     print(f"'{MODEL_PATH}' yolundan model yükleniyor...")
-    model = SentenceTransformer(MODEL_PATH)
+    model = SentenceTransformer(str(MODEL_PATH))
     sadece_metinler = [p['icerik'] for p in tum_parcalar]
     
     print("Metin parçaları vektörlere dönüştürülüyor...")
     vektorler = model.encode(sadece_metinler, show_progress_bar=True, normalize_embeddings=True)
     
-    dimension = vektorler.shape[1]
-    index = faiss.IndexFlatIP(dimension)
+    index = faiss.IndexFlatIP(vektorler.shape[1])
     index.add(vektorler)
     
-    print(f"İndeks '{VECTOR_DB_PATH}' dosyasına kaydediliyor...")
     faiss.write_index(index, str(VECTOR_DB_PATH))
-    
-    print(f"Metadata '{METADATA_PATH}' dosyasına kaydediliyor...")
     with open(METADATA_PATH, 'w', encoding='utf-8') as f:
         json.dump(tum_parcalar, f, ensure_ascii=False, indent=4)
-    print("Veritabanı oluşturma işlemi başarıyla tamamlandı!")
+    print("Veritabanı ve model oluşturma işlemi başarıyla tamamlandı!")
 
 @app.on_event("startup")
 def startup_event():
@@ -121,19 +119,57 @@ def startup_event():
         state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
         print("Gemini modeli başarıyla yapılandırıldı.")
 
-    # Kalıcı diskte model ve veritabanı var mı diye kontrol et
-    if not MODEL_PATH.exists() or not VECTOR_DB_PATH.exists() or not METADATA_PATH.exists():
-        # Eğer biri bile eksikse, hepsini sıfırdan oluştur
+    if not all(p.exists() for p in [MODEL_PATH, VECTOR_DB_PATH, METADATA_PATH]):
         veritabani_ve_model_olustur()
     
     print("Modeller ve veritabanı kalıcı diskten yükleniyor...")
-    state["embedding_model"] = SentenceTransformer(MODEL_PATH)
+    state["embedding_model"] = SentenceTransformer(str(MODEL_PATH))
     state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
     with open(METADATA_PATH, 'r', encoding='utf-8') as f:
         state["chunks_metadata"] = json.load(f)
     print("Tüm modeller ve veritabanı başarıyla yüklendi.")
 
 # --- 4. API ENDPOINT'LERİ ---
-# (Bu kısım aynı kalıyor)
-@app.get("/", ...)
-@app.post("/ask", ...)
+@app.get("/")
+def read_root():
+    return {"status": "UniAsistan API çalışıyor!"}
+
+@app.post("/ask", response_model=AnswerResponse)
+def ask_question(request: QuestionRequest):
+    if not all(state.values()):
+        raise HTTPException(status_code=503, detail="Modeller veya veritabanı yüklenemedi. Lütfen logları kontrol edin.")
+    
+    question_vector = state["embedding_model"].encode([request.question], normalize_embeddings=True)
+    distances, indices = state["faiss_index"].search(question_vector, 5)
+    
+    context_parts = [state["chunks_metadata"][i]['icerik'] for i in indices[0]]
+    sources = {state["chunks_metadata"][i]['kaynak'] for i in indices[0]}
+    context = "\n---\n".join(context_parts)
+
+    prompt = f"""
+    Sen Adnan Menderes Üniversitesi Öğrenci İşleri için bir yardım asistanısın.
+    Görevin, sadece ve sadece aşağıda sana verdiğim 'Bağlam' metinlerini kullanarak kullanıcının sorusuna cevap vermektir.
+    Cevabın kesinlikle bu bağlamın dışına çıkmamalıdır. Eğer cevap bağlamda yoksa, 'Bu konuda bilgi sahibi değilim.' de.
+    Cevaplarını nazik, anlaşılır ve kısa tut.
+    
+    ---
+    Bağlam:
+    {context}
+    ---
+    
+    Kullanıcı Sorusu: {request.question}
+    
+    Cevap:
+    """
+    
+    try:
+        response = state["generative_model"].generate_content(prompt)
+        answer = response.text
+    except Exception as e:
+        print(f"Gemini API hatası: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Cevap üretilirken bir hata oluştu."
+        )
+
+    return AnswerResponse(answer=answer, sources=list(sources))
