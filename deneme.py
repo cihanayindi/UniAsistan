@@ -8,7 +8,7 @@ import json
 import re  ### YENİ EKLENDİ ### -> Metin temizleme için 'regular expression' kütüphanesi
 
 # --- 1. AYARLAR VE SABİTLER ---
-PDF_KLASORU = "files"
+PDF_KLASORU = "source_documents"
 VEKTOR_DB_YOLU = "vektor/faiss_index.bin"
 METADATA_YOLU = "vektor/chunks_metadata.json"
 MODEL_ADI = 'paraphrase-multilingual-mpnet-base-v2'
@@ -136,12 +136,12 @@ if __name__ == '__main__':
     # Metin temizleme özelliğini eklediğiniz için, daha kaliteli bir veritabanı
     # oluşturmak adına bu bölümü tekrar çalıştırmalısınız.
     
-    # print("--- Veritabanı Oluşturma ve Temizleme Modu ---")
-    # ham_metinler = pdf_metinlerini_al(PDF_KLASORU)
-    # metin_parcalari = metni_parcalara_ayir(ham_metinler)
-    # veritabani_olustur_ve_kaydet(metin_parcalari)
+    print("--- Veritabanı Oluşturma ve Temizleme Modu ---")
+    ham_metinler = pdf_metinlerini_al(PDF_KLASORU)
+    metin_parcalari = metni_parcalara_ayir(ham_metinler)
+    veritabani_olustur_ve_kaydet(metin_parcalari)
     
-    # print("\n" + "="*50 + "\n")
+    print("\n" + "="*50 + "\n")
 
     # Bu blok, oluşturulmuş yeni ve temiz veritabanı üzerinde ARAMA TESTİ yapmak için kullanılır.
     # Asıl uygulamanız bu mantıkla çalışacak.
