@@ -234,11 +234,9 @@
             }
         }
         
-        // --- BU BÖLÜMÜ GÜNCELLİYORUZ ---
         // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            const API_URL = 'https://uniasistan.fly.dev/ask'; // Kendi API adresiniz
-
+            const API_URL = 'http://localhost:8000/api/message'; // Yerel API adresi
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -246,27 +244,29 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        question: question 
+                        message: question  // 🔄 "question" yerine "message"
                     }),
                 });
 
                 if (!response.ok) {
-                    // Sunucudan bir hata dönerse (500, 404 vs.)
                     const errorData = await response.json();
                     throw new Error(errorData.detail || `API hatası: ${response.statusText}`);
                 }
 
                 const data = await response.json();
 
-                hideTypingIndicator(); // "Yazıyor..." göstergesini gizle
+                hideTypingIndicator();
 
-                // Cevap ve kaynakları birleştirerek daha zengin bir metin oluşturuyoruz
-                let fullAnswer = data.answer;
+                // Flask'tan dönen "reply" alanını al
+                let fullAnswer = data.reply;
+
+                // Eğer kaynak varsa ekle (örnek yapı, kaynak döndürmüyor şu anda)
                 if (data.sources && data.sources.length > 0) {
-                    const uniqueSources = [...new Set(data.sources)]; // Kaynakları tekilleştir
+                    const uniqueSources = [...new Set(data.sources)];
                     fullAnswer += "\n\n**Kaynaklar:** " + uniqueSources.join(', ');
                 }
-                appendMessage(fullAnswer, 'bot'); // Gelen cevabı ekrana yazdır
+
+                appendMessage(fullAnswer, 'bot');
 
             } catch (error) {
                 console.error("İstek sırasında hata oluştu:", error);
@@ -274,6 +274,7 @@
                 appendMessage("Üzgünüm, bir sorunla karşılaştım. Lütfen daha sonra tekrar deneyin. Detay: " + error.message, 'bot');
             }
         }
+
     </script>
 </body>
 </html>
