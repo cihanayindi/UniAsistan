@@ -19,3 +19,7 @@ primary_region = 'fra'
   memory = 2048
   cpu_kind = 'shared'
   cpus = 1
+
+[mounts]
+  source="uniasistan_data"
+  destination="/data"
