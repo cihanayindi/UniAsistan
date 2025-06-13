@@ -39,10 +39,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-origins = ["*"]
+origins = [
+    "https://uni-asistan.vercel.app",  # Vercel adresiniz
+    "http://localhost",
+    "http://localhost:8000",
+    "http://127.0.0.1",
+    "http://127.0.0.1:8000",
+    # Gerekirse başka adresler de eklenebilir
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins, # <-- Artık güncel listeyi kullanıyor
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
