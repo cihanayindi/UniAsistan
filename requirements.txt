@@ -11,5 +11,5 @@ numpy
 pydantic
 python-dotenv
 google-generativeai
-langchain-google-
+langchain-google-genai
 flask
