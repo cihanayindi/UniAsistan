@@ -236,7 +236,7 @@
         
         // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            const API_URL = 'http://localhost:8000/api/message'; // Yerel API adresi
+            const API_URL = 'https://uniasistan.fly.dev/ask'; // Yerel API adresi
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
