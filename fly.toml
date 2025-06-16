@@ -19,7 +19,7 @@ primary_region = 'fra'
 [[mounts]]
   source = "uniasistan_app_data"
   destination = "/data"         
-  initial_size = "8gb"         
+  initial_size = "2gb"         
 
 [[vm]]
   memory = '2gb'
