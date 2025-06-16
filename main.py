@@ -24,7 +24,7 @@ VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
 MODEL_PATH = Path("/app/models/sbert_model")
-PDF_SOURCE_PATH = DATA_PATH / "source_documents"
+PDF_SOURCE_PATH = Path("/app/source_documents")
 GENERATIVE_MODEL_NAME = 'gemini-1.5-flash'  # Google Gemini model name
 MIN_CHUNK_LENGTH = 30 # Minimum length of text chunks to consider
 

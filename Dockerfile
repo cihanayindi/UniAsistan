@@ -20,8 +20,8 @@ RUN .venv/bin/pip install huggingface_hub sentence-transformers
 
 # main.py dosyanızdaki EMBEDDING_MODEL_NAME'e karşılık gelen model adını tanımlayın
 ENV EMBEDDING_MODEL_NAME="paraphrase-multilingual-mpnet-base-v2"
-# Modelin kaydedileceği yolu tanımlayın (main.py'deki DATA_PATH ve MODEL_PATH ile uyumlu)
-ENV MODEL_SAVE_PATH="/app/data/sbert_model"
+# Modelin kaydedileceği yolu tanımlayın (main.py'deki yeni MODEL_PATH ile uyumlu)
+ENV MODEL_SAVE_PATH="/app/models/sbert_model"
 
 # Modelin kaydedileceği dizini oluşturun
 RUN mkdir -p ${MODEL_SAVE_PATH}
@@ -54,9 +54,14 @@ WORKDIR /app
 # Sadece sanal ortamı kopyalayın
 COPY --from=builder /app/.venv .venv/
 
+# İndirilmiş ve kaydedilmiş modeli kopyalayın
+COPY --from=builder /app/models/sbert_model /app/models/sbert_model
 
-COPY --from=builder /app/data/sbert_model /app/models/sbert_model
+# source_documents klasörünü (PDF'lerinizin olduğu yer) kopyalayın
+COPY ./source_documents /app/source_documents
 
+# Geri kalan uygulama dosyalarını kopyalayın
 COPY . .
 
+# Uygulamayı başlatın
 CMD [".venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
