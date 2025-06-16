@@ -1,11 +1,11 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
-uvicorn[standard]  # FastAPI'yi çalıştırmak için
+uvicorn[standard]  
 pydantic
 sentence-transformers
-faiss-cpu  # veya faiss-gpu eğer GPU kullanacaksanız (Fly.io'da genellikle CPU)
+faiss-cpu  
 numpy
-fitz  # PyMuPDF için
+fitz
 google-generativeai
 python-dotenv
 langchain-text-splitters
