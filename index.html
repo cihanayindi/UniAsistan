@@ -186,14 +186,18 @@
 
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('p-4', 'max-w-xs', 'sm:max-w-md', 'md:max-w-lg', 'shadow-md');
-            messageBubble.textContent = message;
+            
+            // Metni HTML olarak ayarlamadan önce \n'leri <br>'ye ve **'ları <strong>'ye çevir
+            let formattedMessage = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // **Metin** -> <strong>Metin</strong>
+            formattedMessage = formattedMessage.replace(/\n/g, '<br>'); // \n -> <br>
+
+            messageBubble.innerHTML = formattedMessage; // textContent yerine innerHTML
 
             if (sender === 'user') {
                 messageWrapper.classList.add('justify-end');
                 messageBubble.classList.add('user-bubble', 'bg-gradient-to-br', 'from-indigo-500', 'to-blue-500', 'text-white', 'shadow-indigo-200/80');
             } else {
                 messageWrapper.classList.add('justify-start');
-                 // Bot ikonu ekleyelim
                 const botIcon = document.createElement('div');
                 botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
                 messageWrapper.appendChild(botIcon);
@@ -236,7 +240,7 @@
         
         // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            const API_URL = 'https://uniasistan.fly.dev/ask'; // Yerel API adresi
+            const API_URL = 'http://127.0.0.1:8000/ask'; // Yerel API adresi
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -244,26 +248,40 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        message: question  // 🔄 "question" yerine "message"
+                        question: question  // DÜZELTME 1
                     }),
                 });
 
+                hideTypingIndicator(); // Yazıyor göstergesini cevaptan önce kaldır
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.detail || `API hatası: ${response.statusText}`);
+                    // FastAPI'nin detaylı hata mesajını kullan
+                    let detailMessage = "Bilinmeyen API hatası";
+                    if (errorData && errorData.detail) {
+                        if (typeof errorData.detail === 'string') {
+                            detailMessage = errorData.detail;
+                        } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0 && errorData.detail[0].msg) {
+                            // Pydantic validasyon hataları için daha spesifik mesaj
+                            detailMessage = errorData.detail.map(err => `${err.loc.join('.')} - ${err.msg}`).join("; ");
+                        } else {
+                            detailMessage = JSON.stringify(errorData.detail);
+                        }
+                    } else {
+                        detailMessage = `API hatası: ${response.statusText} (Kod: ${response.status})`;
+                    }
+                    throw new Error(detailMessage);
                 }
 
                 const data = await response.json();
+                
+                let fullAnswer = data.answer; // DÜZELTME 2
 
-                hideTypingIndicator();
-
-                // Flask'tan dönen "reply" alanını al
-                let fullAnswer = data.reply;
-
-                // Eğer kaynak varsa ekle (örnek yapı, kaynak döndürmüyor şu anda)
                 if (data.sources && data.sources.length > 0) {
                     const uniqueSources = [...new Set(data.sources)];
-                    fullAnswer += "\n\n**Kaynaklar:** " + uniqueSources.join(', ');
+                    // \n karakterlerini doğrudan ekliyoruz, appendMessage'da <br>'ye çevrilecek
+                    // **Kaynaklar:** kısmını da Markdown formatında bırakıyoruz, appendMessage'da <strong>'ye çevrilecek
+                    fullAnswer += "\n\n**Kaynaklar:**\n- " + uniqueSources.join('\n- ');
                 }
 
                 appendMessage(fullAnswer, 'bot');
@@ -274,7 +292,6 @@
                 appendMessage("Üzgünüm, bir sorunla karşılaştım. Lütfen daha sonra tekrar deneyin. Detay: " + error.message, 'bot');
             }
         }
-
     </script>
 </body>
 </html>

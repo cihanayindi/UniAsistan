@@ -162,4 +162,4 @@ cython_debug/
 # Project specific ignores
 /files/
 
-/sbert_model
+data/sbert_model
