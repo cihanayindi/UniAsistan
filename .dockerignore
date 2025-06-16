@@ -3,8 +3,5 @@ fly.toml
 __pycache__/
 .envrc
 .venv/
-/data
-/canliyaAlma
-/eski_kodlar
 venv/
 .env/
