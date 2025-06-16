@@ -5,7 +5,7 @@ pydantic
 sentence-transformers
 faiss-cpu  
 numpy
-fitz
+PyMuPDF
 google-generativeai
 python-dotenv
 langchain-text-splitters
