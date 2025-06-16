@@ -22,6 +22,6 @@ primary_region = 'fra'
   initial_size = "2gb"         
 
 [[vm]]
-  memory = '8gb'
+  memory = '4gb'
   cpu_kind = 'performance'
   cpus = 2
