@@ -8,4 +8,4 @@ numpy
 PyMuPDF
 google-generativeai
 python-dotenv
-langchain-text-splitters
+langchain
