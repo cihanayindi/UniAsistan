@@ -1,12 +1,6 @@
+fly.toml
+.git/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.env
-.git
-.vscode/
-data/ # Veri dosyalarını imaja dahil etmeyin, bunlar kalıcı diskte olacak
-*.log
+.envrc
+.venv/
+/data
