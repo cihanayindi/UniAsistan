@@ -240,7 +240,16 @@
         
         // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            const API_URL = 'https://uniasistan-api.fly.dev/ask'; // Yerel API adresi
+            // ÖNCEKİ: const API_URL = 'https://uniasistan-api.fly.dev/ask';
+            // YENİ: DigitalOcean droplet'ınızın IP adresini kullanın.
+            const API_URL = 'http://206.81.16.93/ask'; // Canlı DigitalOcean API adresi
+            // Eğer HTTPS kurduysanız (önerilir):
+            // const API_URL = 'https://206.81.16.93/ask';
+            // Eğer bir alan adı bağladıysanız (örneğin uni-asistan.com):
+            // const API_URL = 'http://uni-asistan.com/ask';
+            // VEYA HTTPS ile alan adı:
+            // const API_URL = 'https://uni-asistan.com/ask';
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -248,7 +257,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        question: question  // DÜZELTME 1
+                        question: question
                     }),
                 });
 
@@ -274,13 +283,11 @@
                 }
 
                 const data = await response.json();
-                
-                let fullAnswer = data.answer; // DÜZELTME 2
+
+                let fullAnswer = data.answer;
 
                 if (data.sources && data.sources.length > 0) {
                     const uniqueSources = [...new Set(data.sources)];
-                    // \n karakterlerini doğrudan ekliyoruz, appendMessage'da <br>'ye çevrilecek
-                    // **Kaynaklar:** kısmını da Markdown formatında bırakıyoruz, appendMessage'da <strong>'ye çevrilecek
                     fullAnswer += "\n\n**Kaynaklar:**\n- " + uniqueSources.join('\n- ');
                 }
 

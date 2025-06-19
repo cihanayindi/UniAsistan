@@ -1,0 +1,31 @@
+# fly.toml app configuration file generated for uniasistan on 2025-06-11T01:50:43+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'uniasistan'
+primary_region = 'fra'
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+  [[http_service.ports]]
+  port = 80
+  [[http_service.ports]]
+  port = 443
+  
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  memory = 2048
+  cpu_kind = 'shared'
+  cpus = 1
+
+[mounts]
+  source="uniasistan_data"
+  destination="/data"
