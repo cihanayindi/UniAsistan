@@ -70,7 +70,7 @@
             // Örnek: [{ "name": "Staj Yönergesi.pdf", "url": "/api/download/staj_yonergesi.pdf" }, ...]
             // UniAsistan API'nizin temel URL'sini kullanın.
             const API_BASE_URL = 'https://uniasistan.social'; // index.html'deki API ile aynı olmalı
-            const KAYNAKLAR_API_URL = `${API_BASE_URL}/kaynaklar`; // PDF listesi için yeni bir endpoint
+            const KAYNAKLAR_API_URL = `${API_BASE_URL}/get_sourceslist`; // PDF listesi için yeni bir endpoint
 
             async function fetchPdfList() {
                 try {
