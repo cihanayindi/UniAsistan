@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniAsistan - Kaynak Dosyalar</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5; /* Ana temaya uygun bir renk */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4338ca;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 min-h-screen p-4 md:p-8">
+
+    <div class="container mx-auto max-w-3xl bg-white rounded-2xl shadow-2xl shadow-indigo-200/50 overflow-hidden">
+        <!-- Başlık Alanı -->
+        <div class="p-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white flex items-center justify-between shadow-lg">
+            <div>
+                <h1 class="text-2xl font-bold">Kaynak Dosyalar</h1>
+                <p class="text-sm opacity-80">UniAsistan tarafından kullanılan PDF dokümanları</p>
+            </div>
+            <a href="index.html" title="Sohbete Geri Dön" class="bg-white/20 hover:bg-white/30 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Sohbete Dön
+            </a>
+        </div>
+
+        <!-- PDF Listesi Alanı -->
+        <div id="pdf-list-container" class="p-6 md:p-8 space-y-4">
+            <!-- Yükleniyor mesajı -->
+            <div id="loading-message" class="flex items-center justify-center text-slate-500 py-10">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Kaynaklar yükleniyor...
+            </div>
+            <!-- PDF listesi JavaScript tarafından buraya eklenecek -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pdfListContainer = document.getElementById('pdf-list-container');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            // Backend API URL'si. Bu URL, PDF listesini JSON formatında döndürmelidir.
+            // Örnek: [{ "name": "Staj Yönergesi.pdf", "url": "/api/download/staj_yonergesi.pdf" }, ...]
+            // UniAsistan API'nizin temel URL'sini kullanın.
+            const API_BASE_URL = 'https://uniasistan.social'; // index.html'deki API ile aynı olmalı
+            const KAYNAKLAR_API_URL = `${API_BASE_URL}/kaynaklar`; // PDF listesi için yeni bir endpoint
+
+            async function fetchPdfList() {
+                try {
+                    const response = await fetch(KAYNAKLAR_API_URL);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: `Sunucudan hatalı yanıt: ${response.status}` }));
+                        let errorMessage = errorData.detail || `API Hatası: ${response.status} ${response.statusText}`;
+                        throw new Error(errorMessage);
+                    }
+                    
+                    const pdfFiles = await response.json();
+                    renderPdfList(pdfFiles);
+
+                } catch (error) {
+                    console.error("Kaynak listesi alınırken hata oluştu:", error);
+                    if (loadingMessage) loadingMessage.remove();
+                    pdfListContainer.innerHTML = `
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                            <p class="font-bold">Hata!</p>
+                            <p>Kaynaklar yüklenirken bir sorun oluştu: ${error.message}</p>
+                        </div>`;
+                }
+            }
+
+            function renderPdfList(pdfFiles) {
+                if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
+
+                if (!pdfFiles || pdfFiles.length === 0) {
+                    pdfListContainer.innerHTML = '<p class="text-slate-500 text-center py-5">Gösterilecek kaynak dosya bulunamadı.</p>';
+                    return;
+                }
+
+                const ul = document.createElement('ul');
+                ul.className = 'divide-y divide-slate-200';
+
+                pdfFiles.forEach(pdf => {
+                    const li = document.createElement('li');
+                    li.className = 'py-4 flex justify-between items-center hover:bg-slate-50 transition-colors px-2 rounded-md';
+
+                    const fileInfoDiv = document.createElement('div');
+                    fileInfoDiv.className = 'flex items-center space-x-3';
+
+                    const fileIcon = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                        </svg>`;
+                    fileInfoDiv.innerHTML = fileIcon;
+
+                    const fileNameSpan = document.createElement('span');
+                    fileNameSpan.textContent = pdf.name || 'İsimsiz Dosya'; // Backend'den "name" alanı gelmeli
+                    fileNameSpan.className = 'text-slate-700 font-medium text-sm md:text-base';
+                    fileInfoDiv.appendChild(fileNameSpan);
+                    
+                    // Backend'den gelen URL'nin tam URL olduğunu varsayıyoruz.
+                    // Eğer göreceli path ise, API_BASE_URL ile birleştirmeniz gerekebilir.
+                    // Örneğin: const downloadUrl = pdf.url.startsWith('/') ? `${API_BASE_URL}${pdf.url}` : pdf.url;
+                    const downloadUrl = pdf.url;
+
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = downloadUrl;
+                    downloadLink.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 inline-block" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>İndir`;
+                    downloadLink.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-md text-xs md:text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50';
+                    downloadLink.setAttribute('target', '_blank'); // İndirmeyi yeni sekmede başlatır veya mevcut sekmede tetikler
+                    // `download` özniteliği, tarayıcıya dosyayı indirmesini ve verilen ismi kullanmasını önerir.
+                    // En güvenilir yöntem, backend'in `Content-Disposition: attachment; filename="dosya_adi.pdf"` başlığını ayarlamasıdır.
+                    downloadLink.setAttribute('download', pdf.name || 'kaynak_dosya.pdf'); 
+
+                    li.appendChild(fileInfoDiv);
+                    li.appendChild(downloadLink);
+                    ul.appendChild(li);
+                });
+
+                pdfListContainer.appendChild(ul);
+            }
+
+            // Sayfa yüklendiğinde PDF listesini çek
+            fetchPdfList();
+        });
+    </script>
+</body>
+</html>
