@@ -128,7 +128,7 @@
                     // Backend'den gelen URL'nin tam URL olduğunu varsayıyoruz.
                     // Eğer göreceli path ise, API_BASE_URL ile birleştirmeniz gerekebilir.
                     // Örneğin: const downloadUrl = pdf.url.startsWith('/') ? `${API_BASE_URL}${pdf.url}` : pdf.url;
-                    const downloadUrl = pdf.url;
+                    const downloadUrl = `${API_BASE_URL}${pdf.url}`;
 
                     const downloadLink = document.createElement('a');
                     downloadLink.href = downloadUrl;
