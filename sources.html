@@ -38,6 +38,7 @@
             <div>
                 <h1 class="text-2xl font-bold">Kaynak Dosyalar</h1>
                 <p class="text-sm opacity-80">UniAsistan tarafından kullanılan PDF dokümanları</p>
+                <p id="file-count" class="text-sm opacity-80"></p>
             </div>
             <a href="index.html" title="Sohbete Geri Dön" class="bg-white/20 hover:bg-white/30 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -83,6 +84,8 @@
                     }
                     
                     const pdfFiles = await response.json();
+                    const numberOfFiles = pdfFiles.length;
+                    document.getElementById("file-count").textContent = "Sistemdeki toplam belge sayısı: " + numberOfFiles;
                     renderPdfList(pdfFiles);
 
                 } catch (error) {
