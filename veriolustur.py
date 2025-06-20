@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # --- 1. AYARLAR VE SABİTLER ---
-DATA_PATH = Path("./data")
+DATA_PATH = Path("./dataV2")
 VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
