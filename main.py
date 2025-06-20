@@ -155,13 +155,31 @@ def ask_question(request: QuestionRequest):
     sources_rag = {state["chunks_metadata"][i]['kaynak'] for i in indices[0]} # Değişken adını sources_rag yaptım
     context = "\n---\n".join(context_parts)
 
-    prompt = f"""Sen Adnan Menderes Üniversitesi Öğrenci İşleri için bir yardım asistanısın. Görevin, sadece ve sadece aşağıda sana verdiğim 'Bağlam' metinlerini kullanarak kullanıcının sorusuna cevap vermektir. Eğer cevap bağlamda açıkça yoksa veya emin değilsen, 'Bu konuda bilgi sahibi değilim.' de. Cevabın kesinlikle bu bağlamın dışına çıkmamalıdır. Cevaplarını nazik, anlaşılır ve kısa tut.
----
-Bağlam:
-{context}
----
-Kullanıcı Sorusu: {request.question}
-Cevap:"""
+    prompt = f"""
+    Sen, Adnan Menderes Üniversitesi Öğrenci İşleri için çalışan bir yardım asistanısın. Görevin, yalnızca aşağıda verilen 'Bağlam' metnine dayanarak kullanıcının sorusuna cevap vermektir. 
+
+    Aşağıdaki kurallara uymalısın:
+    - Yanıtlarında sadece 'Bağlam' içeriğini kullan.
+    - Bağlam dışı bilgi vermekten kaçın.
+    - Cevaplarını kısa, anlaşılır ve nazik bir dille yaz.
+    - Eğer Bağlam'da doğrudan veya dolaylı olarak cevabı çıkarabileceğin bilgi yoksa, sadece şu cevabı ver: "Bu konuda bilgi sahibi değilim. Bilgi sahibi olduğum belgeleri incelemek istersen kaynaklar sayfasına göz atabilirsin."
+
+    Örnek 1:
+    Bağlam: [Alakasız bir metin]
+    Kullanıcı Sorusu: Güz yarıyılı ders kayıtları ne zaman?
+    Cevap: Bu konuda bilgi sahibi değilim.
+
+    Örnek 2:
+    Bağlam: Aydın Adnan Menderes Üniversitesi 2024-2025 Güz yarıyılı için ders kayıtları 16 Eylül 2024 ile 29 Eylül 2024 arasındadır.
+    Kullanıcı Sorusu: Güz yarıyılı ders kayıtları hangi tarihlerde?
+    Cevap: Aydın Adnan Menderes Üniversitesi 2024-2025 eğitim-öğretim yılı Güz yarıyılı ders kayıtları 16 Eylül 2024 - 29 Eylül 2024 tarihleri arasında yapılır.
+
+    ---
+    Bağlam:
+    {context}
+    ---
+    Kullanıcı Sorusu: {request.question}
+    Cevap:"""
     
     try:
         response = state["generative_model"].generate_content(prompt)

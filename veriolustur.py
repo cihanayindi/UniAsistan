@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # --- 1. AYARLAR VE SABİTLER ---
-DATA_PATH = Path("./dataV2")
+DATA_PATH = Path("./dataV3")
 VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
@@ -72,7 +72,7 @@ def create_and_save_database():
         return False
 
     # 4. Metinleri Parçalara Böl (Chunking)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100)
     tum_parcalar = []
     for dokuman in metinler_ve_kaynaklar:
         chunks = text_splitter.split_text(dokuman['icerik'])
