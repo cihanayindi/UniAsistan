@@ -44,7 +44,7 @@ app = FastAPI(
 
 # CORS Middleware
 origins = [
-    "https://uni-asistan.vercel.app",
+    "https://uniasistan.vercel.app",
     "http://localhost:8080", # Frontend development için
     "http://127.0.0.1:8080", # Frontend development için
     "null", # Lokal HTML dosyalarını açarken (file://) bazen origin null olur
