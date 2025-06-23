@@ -9,12 +9,14 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # --- 1. AYARLAR VE SABİTLER ---
-DATA_PATH = Path("./dataV4")
+DATA_PATH = Path("./dataV5")
 VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
 # HUGGINGFACE_CACHE_PATH'i kaldırdık çünkü SentenceTransformer model adını kullanarak doğru yolu kendi bulacak.
 PDF_SOURCE_PATH = Path("./source_documents") # PDF'lerinizin olduğu klasör
+CHUNK_SIZE = 1024  # Parçaların boyutu
+CHUNK_OVERLAP = 200  # Parçalar arasındaki örtüşme miktarı
 
 # --- 2. YARDIMCI FONKSİYONLAR ---
 def metni_temizle(text: str) -> str:
@@ -72,7 +74,7 @@ def create_and_save_database():
         return False
 
     # 4. Metinleri Parçalara Böl (Chunking)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
     tum_parcalar = []
     for dokuman in metinler_ve_kaynaklar:
         chunks = text_splitter.split_text(dokuman['icerik'])
