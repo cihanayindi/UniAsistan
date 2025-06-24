@@ -1,7 +1,15 @@
 # UniAsistan - RAG-Based Chatbot for Adnan Menderes University
 
-![UniAsistan Interface](images/UniAsistanInterface.png)
-![UniAsistan Sources Page](images/UniAsistanInterface2.png)
+<table align="center">
+  <tr>
+    <td align="center"><strong>Sohbet Arayüzü</strong></td>
+    <td align="center"><strong>Kaynaklar Sayfası</strong></td>
+  </tr>
+  <tr>
+    <td><img src="./images/UniAsistanInterface.png" alt="UniAsistan Interface" width="100%"></td>
+    <td><img src="./images/UniAsistanInterface2.png" alt="UniAsistan Sources Page" width="100%"></td>
+  </tr>
+</table>
 
 **Live Demo:** [UniAsistan Chat Interface](https://uniasistan.vercel.app/)
 
@@ -33,7 +41,7 @@ The core skills developed during this project include:
 
 The project is built on a modern, decoupled architecture where the frontend and backend are separate.
 
-![Architecture Diagram](images/UniAsistanProjectDiagram.png)
+![Architecture Diagram](./images/UniAsistanProjectDiagram.png)
 
 ### Technology Stack
 
