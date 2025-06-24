@@ -11,6 +11,8 @@ from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi.responses import FileResponse # Dosya indirme için eklendi
+from sklearn.metrics.pairwise import cosine_similarity
+import traceback
 
 # --- Constants and Settings ---
 # Bu yollar, Docker imajı içindeki uygulama kök dizinine göre belirlenmiştir.
@@ -118,6 +120,61 @@ def startup_event():
 async def root():
     return {"message": "UniAsistan API çalışıyor!"}
 
+# 1. YARDIMCI FONKSİYON (Bu fonksiyonu @app.post'tan önceye ekleyin)
+def reorder_with_mmr(
+    question_vector: np.ndarray,
+    faiss_index: faiss.Index,
+    initial_indices: np.ndarray,
+    k: int,
+    lambda_mult: float = 0.7
+) -> list[int]:
+    """
+    FAISS'ten gelen sonuçları MMR (Maximal Marginal Relevance) kullanarak yeniden sıralar.
+    """
+    if initial_indices.size == 0:
+        return []
+
+    # --- DÜZELTME BU SATIRDA ---
+    # 'i' değişkenini standart bir Python tam sayısına (int(i)) dönüştürüyoruz.
+    # Ayrıca güvenlik için -1 olan indisleri de filtreliyoruz.
+    valid_indices = [i for i in initial_indices if i != -1]
+    retrieved_vectors = np.array([faiss_index.reconstruct(int(i)) for i in valid_indices])
+    # --------------------------
+
+    if retrieved_vectors.size == 0:
+        return []
+
+    # Soru vektörü ile alınan tüm belgeler arasındaki benzerliği hesapla
+    query_similarity = cosine_similarity(question_vector, retrieved_vectors)[0]
+
+    # Alınan belgelerin kendi aralarındaki benzerliğini hesapla
+    doc_similarity = cosine_similarity(retrieved_vectors)
+
+    final_indices = []
+    remaining_indices_positions = list(range(len(valid_indices)))
+    
+    most_relevant_pos = np.argmax(query_similarity)
+    final_indices.append(valid_indices[most_relevant_pos])
+    remaining_indices_positions.pop(most_relevant_pos)
+
+    while len(final_indices) < min(k, len(valid_indices)):
+        mmr_scores = {}
+        for pos in remaining_indices_positions:
+            # Not: doc_similarity matrisinde doğru satır ve sütunları kullanıyoruz.
+            selected_positions = [valid_indices.index(i) for i in final_indices]
+            similarity_to_selected = np.max(doc_similarity[pos, selected_positions])
+            
+            mmr_score = lambda_mult * query_similarity[pos] - (1 - lambda_mult) * similarity_to_selected
+            mmr_scores[pos] = mmr_score
+        
+        best_pos = max(mmr_scores, key=mmr_scores.get)
+        final_indices.append(valid_indices[best_pos])
+        remaining_indices_positions.remove(best_pos)
+        
+    return final_indices
+
+
+# 2. ANA FONKSİYON (Mevcut /ask endpoint'inizle bunu değiştirin)
 @app.post("/ask", response_model=AnswerResponse)
 def ask_question(request: QuestionRequest):
     if not all([
@@ -141,57 +198,70 @@ def ask_question(request: QuestionRequest):
         if any(keyword in user_question_lower for keyword in keywords):
             return AnswerResponse(answer=answer, sources=[])
 
-    # RAG süreci
-    question_vector = state["embedding_model"].encode(
-        [request.question], normalize_embeddings=True
-    ).astype(np.float32)
-    
-    distances, indices = state["faiss_index"].search(question_vector, 7)
-    
-    if not indices.size:
-        return AnswerResponse(answer="Sorunuza uygun bir içerik bulamadım.", sources=[])
-
-    context_parts = [state["chunks_metadata"][i]['icerik'] for i in indices[0]]
-    sources_rag = {state["chunks_metadata"][i]['kaynak'] for i in indices[0]} # Değişken adını sources_rag yaptım
-    context = "\n---\n".join(context_parts)
-
-    prompt = f"""
-    Sen, Adnan Menderes Üniversitesi Öğrenci İşleri için çalışan bir yardım asistanısın. Görevin, yalnızca aşağıda verilen 'Bağlam' metnine dayanarak kullanıcının sorusuna cevap vermektir. 
-
-    Aşağıdaki kurallara uymalısın:
-    - Yanıtlarında sadece 'Bağlam' içeriğini kullan.
-    - Bağlam dışı bilgi vermekten kaçın.
-    - Cevaplarını kısa, anlaşılır ve nazik bir dille yaz.
-    - Eğer Bağlam'da doğrudan veya dolaylı olarak cevabı çıkarabileceğin bilgi yoksa, sadece şu cevabı ver: "Bu konuda bilgi sahibi değilim. Bilgi sahibi olduğum belgeleri incelemek istersen kaynaklar sayfasına göz atabilirsin."
-
-    Örnek 1:
-    Bağlam: [Alakasız bir metin]
-    Kullanıcı Sorusu: Güz yarıyılı ders kayıtları ne zaman?
-    Cevap: Bu konuda bilgi sahibi değilim.
-
-    Örnek 2:
-    Bağlam: Aydın Adnan Menderes Üniversitesi 2024-2025 Güz yarıyılı için ders kayıtları 16 Eylül 2024 ile 29 Eylül 2024 arasındadır.
-    Kullanıcı Sorusu: Güz yarıyılı ders kayıtları hangi tarihlerde?
-    Cevap: Aydın Adnan Menderes Üniversitesi 2024-2025 eğitim-öğretim yılı Güz yarıyılı ders kayıtları 16 Eylül 2024 - 29 Eylül 2024 tarihleri arasında yapılır.
-
-    ---
-    Bağlam:
-    {context}
-    ---
-    Kullanıcı Sorusu: {request.question}
-    Cevap:"""
-    
+    # --- KAPSAMLI HATA YAKALAMA VE MMR SÜRECİ ---
     try:
-        response = state["generative_model"].generate_content(prompt)
-        answer = response.text
-    except Exception as e:
-        print(f"Gemini API hatası: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, # 500 daha uygun
-            detail="Cevap üretilirken bir hata oluştu."
+        # 1. Soruyu vektöre çevir
+        question_vector = state["embedding_model"].encode(
+            [request.question], normalize_embeddings=True
+        ).astype(np.float32)
+        
+        # 2. MMR için daha geniş bir arama yap (performans için fetch_k'yı ayarlayabilirsiniz)
+        fetch_k = 28
+        distances, initial_indices = state["faiss_index"].search(question_vector, fetch_k)
+
+        if initial_indices.size == 0:
+            return AnswerResponse(answer="Sorunuza uygun bir içerik bulamadım.", sources=[])
+        
+        initial_indices = initial_indices[0]
+
+        # 3. Sonuçları MMR ile yeniden sırala (sonuç sayısını final_k ile belirle)
+        final_k = 7
+        mmr_indices = reorder_with_mmr(
+            question_vector=question_vector,
+            faiss_index=state["faiss_index"],
+            initial_indices=initial_indices,
+            k=final_k
         )
 
-    return AnswerResponse(answer=answer, sources=list(sources_rag))
+        # 4. Bağlam ve kaynakları oluştur
+        context_parts = [state["chunks_metadata"][i]['icerik'] for i in mmr_indices]
+        sources_rag = {state["chunks_metadata"][i]['kaynak'] for i in mmr_indices}
+        context = "\n---\n".join(context_parts)
+
+        # 5. Prompt'u hazırla
+        prompt = f"""
+        Sen, Adnan Menderes Üniversitesi Öğrenci İşleri için çalışan bir yardım asistanısın. Görevin, yalnızca aşağıda verilen 'Bağlam' metnine dayanarak kullanıcının sorusuna cevap vermektir. 
+
+        Aşağıdaki kurallara uymalısın:
+        - Yanıtlarında sadece 'Bağlam' içeriğini kullan.
+        - Bağlam dışı bilgi vermekten kaçın.
+        - Cevaplarını kısa, anlaşılır ve nazik bir dille yaz.
+        - Eğer Bağlam'da doğrudan veya dolaylı olarak cevabı çıkarabileceğin bilgi yoksa, sadece şu cevabı ver: "Bu konuda bilgi sahibi değilim. Bilgi sahibi olduğum belgeleri incelemek istersen kaynaklar sayfasına göz atabilirsin."
+
+        ---
+        Bağlam:
+        {context}
+        ---
+        Kullanıcı Sorusu: {request.question}
+        Cevap:"""
+        
+        # 6. Üretici modele gönder ve cevabı al
+        response = state["generative_model"].generate_content(prompt)
+        answer = response.text
+
+        return AnswerResponse(answer=answer, sources=list(sources_rag))
+
+    except Exception as e:
+        # Hata durumunda, hatanın detaylarını sunucu loglarına yazdır.
+        # Bu sayede "Failed to fetch" hatasının gerçek nedenini görebilirsin.
+        print(f"!!! /ask ENDPOINT'İNDE KRİTİK HATA !!!")
+        traceback.print_exc()
+
+        # Kullanıcıya genel bir sunucu hatası mesajı döndür.
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Sunucuda bir hata oluştu. Lütfen logları kontrol edin. Hata: {e}"
+        )
 
 
 # --- YENİ ENDPOINT'LER ---
