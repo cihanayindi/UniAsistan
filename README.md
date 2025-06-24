@@ -2,8 +2,8 @@
 
 <table align="center">
   <tr>
-    <td align="center"><strong>Sohbet Arayüzü</strong></td>
-    <td align="center"><strong>Kaynaklar Sayfası</strong></td>
+    <td align="center"><strong>Chat Interface</strong></td>
+    <td align="center"><strong>Sources Page</strong></td>
   </tr>
   <tr>
     <td><img src="./images/UniAsistanInterface.png" alt="UniAsistan Interface" width="100%"></td>
