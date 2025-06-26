@@ -170,6 +170,49 @@ def get_context_parts(question: str, k=7):
 
     return "\n---\n".join(context_parts), sources_rag
 
+def build_prompt_for_categorize(question: str) -> str:
+    """
+    Kullanıcının sorusunu kategorize etmek için kullanılacak prompt'u oluşturur.
+    """
+    return f"""
+    Aşağıdaki kullanıcı sorusu, hangi kategoriyle ilişkilidir? Kategoriler aşağıda listelenmiştir. Lütfen yalnızca en uygun kategoriyi belirt.
+
+    Kullanıcı Sorusu: {question}
+
+    Kategoriler:
+    {
+    "Genel Akademik Süreçler ve Yönetmelikler": "Bu kategori, üniversitenin genel eğitim-öğretim yönetmeliklerini, akademik takvimi, öğrenim süreleri ve genel işleyişle ilgili temel kuralları içerir. Tüm lisans ve ön lisans öğrencilerini ilgilendiren temel düzenlemeler burada bulunur.",
+    "Ders, Kayıt ve Muafiyet İşlemleri": "Ders seçimi, ders kaydı, ders saydırma (muafiyet) ve intibak işlemleri gibi konulara ilişkin yönetmelik ve esasları kapsar. Öğrencilerin akademik dönem başında yapması gereken kayıt işlemleri ve ders denklikleri bu kategoridedir.",
+    "Sınavlar ve Değerlendirme": "Vize, final, mazeret ve bütünleme gibi sınavların uygulanma usullerini, değerlendirme kriterlerini ve sınav kurallarını içerir. Sınavlara dair tüm yönetmelikler, esaslar ve notlandırma ile ilgili belgeler bu başlık altındadır.",
+    "Mezuniyet ve Diploma İşlemleri": "Mezuniyet koşulları, diploma, diploma eki ve diğer belgelerin düzenlenmesi, ilgili ücretler ve ilişik kesme gibi süreçleri kapsar. Öğrenimini tamamlayan öğrencilerin yapması gereken işlemlerle ilgili tüm bilgiler burada yer alır.",
+    "Yatay Geçiş, Çift Anadal ve Özel Öğrenci Statüleri": "Kurum içi veya kurumlar arası yatay geçiş, çift anadal (ÇAP), yandal ve özel öğrenci statüsüne başvuru koşulları ve süreçleri hakkında bilgi verir. Farklı programlar veya üniversiteler arası geçiş yapmak isteyen öğrenciler için ilgili yönergeler buradadır.",
+    "Staj ve Uygulamalı Eğitimler": "Bu kategori, öğrencilerin zorunlu veya isteğe bağlı stajları, iş yeri eğitimleri ve diğer uygulamalı derslerle ilgili yönerge, genel kurallar, amaçlar, süreçleri, gerekli belgeleri içerir. Staj başvurusu, defter hazırlama, değerlendirme ve staj yönergelerinin hedefleri gibi konular bu kategoride yer alır.",
+    "Yabancı Dil ve Yabancı Uyruklu Öğrenci İşlemleri": "Yabancı dil hazırlık sınıfları, muafiyet sınavları ve yabancı uyruklu öğrencilerin üniversiteye kabul süreçleri, başvuru şartları ve kayıt işlemleri ile ilgili tüm düzenlemeleri içerir.",
+    "Lisansüstü Eğitim (Enstitüler)": "Yüksek lisans ve doktora programları ile ilgilidir. Başvuru, kayıt, ders, tez, uzmanlık alan dersi ve yeterlilik sınavı gibi lisansüstü eğitim süreçlerine dair yönetmelik ve esasları kapsar.",
+    "Öğrenci Yaşamı, Hakları ve Destek Birimleri": "Öğrenci disiplin yönetmeliği, öğrenci konseyi, öğrenci danışmanlığı (mentorlük), özel gereksinimli veya engelli öğrencilere sunulan destekler ve fırsat eşitliği gibi konuları içerir.",
+    "Fakülte ve Yüksekokul Özel Yönetmelikleri": "Sadece belirli bir fakülte, enstitü veya yüksekokula özgü eğitim-öğretim, sınav, staj veya işleyiş kurallarını barındırır. Mühendislik, Tıp, Diş Hekimliği gibi fakültelerin kendi iç yönergeleri bu kategoridedir.",
+    "Formasyon ve Sertifika Programları": "Öğretmenlik için gerekli olan pedagojik formasyon eğitimi gibi özel sertifika programlarına ilişkin başvuru, eğitim ve değerlendirme esaslarını içerir.",
+    "İdari ve Organizasyonel Belgeler": "Üniversitenin akademik ve idari teşkilat yapısı, komisyonların çalışma usulleri, stratejik raporlar ve yaz okulu gibi genel işleyişe dair kurumsal belgeleri içerir. Bu kategori doğrudan öğrenci işlemlerinden çok, kurumun iç işleyişi ile ilgilidir."
+    }
+
+    Cevabınızı yalnızca aşağıdaki kategori başlıklarından biriyle ve aynen yazıldığı şekilde veriniz. Ek açıklama yapmayınız.
+    """
+
+def send_api_request_for_categorize(question: str):
+    """
+    Google Gemini API'sine soru kategorize etme isteği gönderir.
+    """
+    
+    try:
+        response = state["generative_model"].generate_content(build_prompt_for_categorize(question))
+        return response.text
+    except Exception as e:
+        print(f"Gemini API kategorize hatası: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Soru kategorize edilirken bir hata oluştu."
+        )
+
 def build_prompt(question: str, context: str) -> str:
     """
     Kullanıcının sorusuna cevap vermek için kullanılacak prompt'u oluşturur.
@@ -216,7 +259,7 @@ def ask_question(request: QuestionRequest):
 
     context, sources_rag = get_context_parts(request.question) # Cevap için bağlamı ve kaynakları al
 
-    print("Bağlam parçaları:", context)  # Debug için bağlamı yazdır
+    print(send_api_request_for_categorize(request.question)) # Soru kategorize etme isteği gönder
 
     prompt = build_prompt(request.question, context) # Prompt'u oluştur
 
