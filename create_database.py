@@ -9,12 +9,11 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # --- 1. AYARLAR VE SABİTLER ---
-DATA_PATH = Path("./dataV5")
+DATA_PATH = Path("./data")
 VECTOR_DB_PATH = DATA_PATH / "faiss_index.bin"
 METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
-# HUGGINGFACE_CACHE_PATH'i kaldırdık çünkü SentenceTransformer model adını kullanarak doğru yolu kendi bulacak.
-PDF_SOURCE_PATH = Path("./source_documents") # PDF'lerinizin olduğu klasör
+PDF_SOURCE_PATH = Path("./source_documents") 
 CHUNK_SIZE = 1024  # Parçaların boyutu
 CHUNK_OVERLAP = 200  # Parçalar arasındaki örtüşme miktarı
 

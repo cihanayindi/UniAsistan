@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 # --- 1. AYARLAR VE SABİTLER ---
 # Bu yolların, oluşturucu betikteki yollarla aynı olduğundan emin olun.
-DATA_PATH = Path("./dataV5")
+DATA_PATH = Path("./data")
 VECTOR_DB_PATH = DATA_PATH / "category_faiss_index.bin"
 METADATA_PATH = DATA_PATH / "category_metadata.json"
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
@@ -43,14 +43,7 @@ def siniflandirmayi_test_et():
 
     # 3. Test edilecek sorguları tanımla
     test_sorgulari = [
-        "Staj defterimi ne zaman teslim etmeliyim?",
-        "Finaller için mazeret sınavı hakkım var mı?",
-        "Başka bir üniversiteden sizin okulunuza geçmek istiyorum.",
-        "Tezimi yazarken uymam gereken kurallar nelerdir?",
-        "Okul ücreti ne kadar?",
-        "ADÜ'den mezun olunca hangi belgeleri alacağım?",
-        "Disiplin yönetmeliği hakkında bilgi alabilir miyim?",
-        "Pedagojik formasyon dersleri nasıl işleniyor?"
+        "Mezuniyet için gerekenler nelerdir?",
     ]
     
     print("\n--- TEST SONUÇLARI ---")

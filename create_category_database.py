@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 # --- 1. AYARLAR VE SABİTLER ---
 # Ana veri klasörü, orijinal betikle aynı kalabilir.
-DATA_PATH = Path("./dataV5") 
+DATA_PATH = Path("./data") 
 # Kategori veritabanı dosyaları için çakışmayı önlemek adına farklı isimler kullanıyoruz.
 VECTOR_DB_PATH = DATA_PATH / "category_faiss_index.bin"
 METADATA_PATH = DATA_PATH / "category_metadata.json"
