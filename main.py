@@ -180,7 +180,8 @@ def build_prompt_for_categorize(question: str) -> str:
     Kullanıcı Sorusu: {question}
 
     Kategoriler:
-    {
+
+    ---
     "Genel Akademik Süreçler ve Yönetmelikler": "Bu kategori, üniversitenin genel eğitim-öğretim yönetmeliklerini, akademik takvimi, öğrenim süreleri ve genel işleyişle ilgili temel kuralları içerir. Tüm lisans ve ön lisans öğrencilerini ilgilendiren temel düzenlemeler burada bulunur.",
     "Ders, Kayıt ve Muafiyet İşlemleri": "Ders seçimi, ders kaydı, ders saydırma (muafiyet) ve intibak işlemleri gibi konulara ilişkin yönetmelik ve esasları kapsar. Öğrencilerin akademik dönem başında yapması gereken kayıt işlemleri ve ders denklikleri bu kategoridedir.",
     "Sınavlar ve Değerlendirme": "Vize, final, mazeret ve bütünleme gibi sınavların uygulanma usullerini, değerlendirme kriterlerini ve sınav kurallarını içerir. Sınavlara dair tüm yönetmelikler, esaslar ve notlandırma ile ilgili belgeler bu başlık altındadır.",
@@ -193,7 +194,7 @@ def build_prompt_for_categorize(question: str) -> str:
     "Fakülte ve Yüksekokul Özel Yönetmelikleri": "Sadece belirli bir fakülte, enstitü veya yüksekokula özgü eğitim-öğretim, sınav, staj veya işleyiş kurallarını barındırır. Mühendislik, Tıp, Diş Hekimliği gibi fakültelerin kendi iç yönergeleri bu kategoridedir.",
     "Formasyon ve Sertifika Programları": "Öğretmenlik için gerekli olan pedagojik formasyon eğitimi gibi özel sertifika programlarına ilişkin başvuru, eğitim ve değerlendirme esaslarını içerir.",
     "İdari ve Organizasyonel Belgeler": "Üniversitenin akademik ve idari teşkilat yapısı, komisyonların çalışma usulleri, stratejik raporlar ve yaz okulu gibi genel işleyişe dair kurumsal belgeleri içerir. Bu kategori doğrudan öğrenci işlemlerinden çok, kurumun iç işleyişi ile ilgilidir."
-    }
+    ---
 
     Cevabınızı yalnızca aşağıdaki kategori başlıklarından biriyle ve aynen yazıldığı şekilde veriniz. Ek açıklama yapmayınız.
     """
