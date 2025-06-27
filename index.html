@@ -99,9 +99,9 @@
             </div>
             
             <!-- Question Entry Form -->
-            <form id="chat-form" class="flex items-center space-x-3">
-                <input type="text" id="message-input" placeholder="Sorunuzu buraya yazın..." class="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm" autocomplete="off">
-                <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-indigo-200/80 hover:shadow-indigo-300/80">
+            <form id="chat-form" class="flex items-end space-x-3">
+                <textarea id="message-input" placeholder="Sorunuzu buraya yazın..." rows="1" class="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm resize-none" autocomplete="off"></textarea>
+                <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-indigo-200/80 hover:shadow-indigo-300/80 flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
@@ -152,8 +152,20 @@
         const faqQuestions = {
             "Staj yönergesi": "Staj yönergesinin amacı nedir?",
             "Ders kayıtları": "Ders kayıtları ne zaman?",
-            "Mezuniyet tarihi": "Mezuniyet tarihi hangi durumlarda ve nasıl belirlenir?"
+            "Mezuniyet şartları": "Mezuniyet şartları nelerdir?"
         };
+        
+        // Auto-resize textarea based on content
+        messageInput.addEventListener('input', () => {
+            const maxHeight = 128; // 128px (h-32)
+            messageInput.style.height = 'auto'; // Reset height to recalculate
+            const newHeight = Math.min(messageInput.scrollHeight, maxHeight);
+            messageInput.style.height = `${newHeight}px`;
+
+            // Show scrollbar if max height is reached
+            messageInput.style.overflowY = (newHeight >= maxHeight) ? 'auto' : 'hidden';
+        });
+
 
         // When the user submits a question
         chatForm.addEventListener('submit', (e) => {
@@ -162,6 +174,8 @@
             if (question) {
                 handleUserQuestion(question);
                 messageInput.value = '';
+                messageInput.style.height = 'auto'; // Reset height after send
+                messageInput.style.overflowY = 'hidden';
             }
         });
 
