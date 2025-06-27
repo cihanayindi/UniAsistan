@@ -11,7 +11,7 @@ from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi.responses import FileResponse # Dosya indirme için eklendi
-from typing import Optional
+from typing import Optional, Set, Tuple
 
 # --- Constants and Settings ---
 DATA_PATH = Path("./data") 
@@ -20,6 +20,7 @@ METADATA_PATH = DATA_PATH / "chunks_metadata.json"
 SOURCE_DOCUMENTS_PATH = Path("./source_documents") 
 EMBEDDING_MODEL_NAME = 'paraphrase-multilingual-mpnet-base-v2'
 GENERATIVE_MODEL_NAME = 'gemini-1.5-flash'
+CATEGORIES_DATA_PATH = SOURCE_DOCUMENTS_PATH / "category.json"
 
 # --- Pydantic Models ---
 class QuestionRequest(BaseModel):
@@ -155,27 +156,62 @@ def is_it_meta_question(user_question: str) -> Optional[AnswerResponse]:
 
     return None
 
-def get_context_parts(question: str, k=7):
+def get_context_parts(
+    question: str,
+    k: int = 7,
+    allowed_sources: Optional[Set[str]] = None
+) -> Tuple[str, Set[str]]:
+    """
+    Soru için embedding hesaplar, FAISS üzerinden arama yapar,
+    sadece allowed_sources içinde olan chunk'lardan k adet içerik döner.
+
+    Args:
+        question (str): Kullanıcının sorduğu soru.
+        k (int): Döndürülecek içerik parça sayısı.
+        allowed_sources (Optional[Set[str]]): İzin verilen kaynak dosya isimleri.
+
+    Returns:
+        Tuple[str, Set[str]]: Birleşik içerik metni ve içeriklerin kaynak dosya isimleri.
+    """
+
     question_vector = state["embedding_model"].encode(
         [question], normalize_embeddings=True
-    ).astype(np.float32)
-    
-    distances, indices = state["faiss_index"].search(question_vector, k)
-    
+    ).astype("float32")
+
+    # Daha fazla chunk çekiyoruz ki filtre sonrası yeterli sayıda kalabilsin
+    distances, indices = state["faiss_index"].search(question_vector, k * 3)
+
     if not indices.size:
-        return AnswerResponse(answer="Sorunuza uygun bir içerik bulamadım.", sources=[])
+        return "Sorunuza uygun bir içerik bulamadım.", set()
 
-    context_parts = [state["chunks_metadata"][i]['icerik'] for i in indices[0]]
-    sources_rag = {state["chunks_metadata"][i]['kaynak'] for i in indices[0]}
+    filtered_context_parts = []
+    filtered_sources = set()
 
-    return "\n---\n".join(context_parts), sources_rag
+    for idx in indices[0]:
+        chunk_meta = state["chunks_metadata"][idx]
+        source = chunk_meta["kaynak"]
+
+        # Eğer allowed_sources tanımlıysa ve kaynak izin verilenlerde değilse atla
+        if allowed_sources is not None and source not in allowed_sources:
+            continue
+
+        filtered_context_parts.append(chunk_meta["icerik"])
+        filtered_sources.add(source)
+
+        if len(filtered_context_parts) >= k:
+            break
+
+    if not filtered_context_parts:
+        return "Sorunuza uygun bir içerik bulamadım.", set()
+
+    return "\n---\n".join(filtered_context_parts), filtered_sources
 
 def build_prompt_for_categorize(question: str) -> str:
     """
     Kullanıcının sorusunu kategorize etmek için kullanılacak prompt'u oluşturur.
     """
     return f"""
-    Aşağıdaki kullanıcı sorusu, hangi kategoriyle ilişkilidir? Kategoriler aşağıda listelenmiştir. Lütfen yalnızca en uygun kategoriyi belirt.
+    Aşağıdaki kullanıcı sorusu, hangi kategorilerle en çok ilişkilidir? Kategoriler aşağıda listelenmiştir. Lütfen yalnızca en uygun 3 kategoriyi sırasıyla belirt.
 
     Kullanıcı Sorusu: {question}
 
@@ -196,7 +232,10 @@ def build_prompt_for_categorize(question: str) -> str:
     "İdari ve Organizasyonel Belgeler": "Üniversitenin akademik ve idari teşkilat yapısı, komisyonların çalışma usulleri, stratejik raporlar ve yaz okulu gibi genel işleyişe dair kurumsal belgeleri içerir. Bu kategori doğrudan öğrenci işlemlerinden çok, kurumun iç işleyişi ile ilgilidir."
     ---
 
-    Cevabınızı yalnızca aşağıdaki kategori başlıklarından biriyle ve aynen yazıldığı şekilde veriniz. Ek açıklama yapmayınız.
+    Cevabınızı yalnızca aşağıdaki kategori başlıklarından bir listeyle ve aynen yazıldığı şekilde veriniz. Ek açıklama yapmayınız.
+    
+    Cevap formatı:
+    "Kategori 1", "Kategori 2", "Kategori 3"
     """
 
 def send_api_request_for_categorize(question: str):
@@ -213,6 +252,28 @@ def send_api_request_for_categorize(question: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Soru kategorize edilirken bir hata oluştu."
         )
+
+def take_filenames_from_sources(categories: list[str], json_path: str) -> set[str]:
+    """
+    Kategorilere ait dosya adlarını category.json'dan alır.
+
+    Args:
+        categories (list[str]): Seçilen kategori isimleri
+        json_path (str): category.json dosyasının yolu
+
+    Returns:
+        set[str]: İlgili kategoriye ait dosya adları
+    """
+    with open(json_path, 'r', encoding='utf-8') as f:
+        category_file_map = json.load(f)
+
+    selected_files = set()
+
+    for category in categories:
+        files = category_file_map.get(category, [])
+        selected_files.update(files)
+
+    return selected_files
 
 def build_prompt(question: str, context: str) -> str:
     """
@@ -257,10 +318,15 @@ def ask_question(request: QuestionRequest):
     meta_answer = is_it_meta_question(user_question_lower) # Meta bir soru mu kontrol et
     if meta_answer:
         return meta_answer  # Eğer meta bir soruysa, direkt cevabı dön
+    
+    categories_raw = send_api_request_for_categorize(request.question).split(",")
+    categories = [cat.strip().strip('"') for cat in categories_raw]
 
-    context, sources_rag = get_context_parts(request.question) # Cevap için bağlamı ve kaynakları al
+    allowed_files = take_filenames_from_sources(categories, CATEGORIES_DATA_PATH) # Kategorilere göre dosya adlarını al
 
-    print(send_api_request_for_categorize(request.question)) # Soru kategorize etme isteği gönder
+    print(f"Kategoriler: {categories}, İzin verilen dosyalar: {allowed_files}")
+
+    context, sources_rag = get_context_parts(request.question,k=7,allowed_sources=allowed_files) # Cevap için bağlamı ve kaynakları al
 
     prompt = build_prompt(request.question, context) # Prompt'u oluştur
 
