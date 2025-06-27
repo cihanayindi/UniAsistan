@@ -12,6 +12,28 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi.responses import FileResponse # Dosya indirme için eklendi
 from typing import Optional, Set, Tuple
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
+log_handler = TimedRotatingFileHandler(
+    "uniasistan.log",
+    when="midnight",
+    interval=1,
+    backupCount=7,
+    encoding='utf-8'
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        log_handler,
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 
 # --- Constants and Settings ---
 DATA_PATH = Path("./data") 
@@ -68,35 +90,35 @@ state = {
 def load_gemini_model():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("UYARI: GEMINI_API_KEY ortam değişkeni bulunamadı. API çalışmayabilir.")
+        logger.info("UYARI: GEMINI_API_KEY ortam değişkeni bulunamadı. API çalışmayabilir.")
         return
     genai.configure(api_key=api_key)
     state["generative_model"] = genai.GenerativeModel(GENERATIVE_MODEL_NAME)
-    print("Gemini modeli başarıyla yapılandırıldı.")
+    logger.info("Gemini modeli başarıyla yapılandırıldı.")
 
 def load_embedding_model():
-    print(f"Embedding modeli '{EMBEDDING_MODEL_NAME}' yükleniyor...")
+    logger.info(f"Embedding modeli '{EMBEDDING_MODEL_NAME}' yükleniyor...")
     state["embedding_model"] = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
 def load_faiss_index():
-    print(f"FAISS index'i '{VECTOR_DB_PATH}' yolundan yükleniyor...")
+    logger.info(f"FAISS index'i '{VECTOR_DB_PATH}' yolundan yükleniyor...")
     state["faiss_index"] = faiss.read_index(str(VECTOR_DB_PATH))
 
 def load_metadata():
-    print(f"Metadata '{METADATA_PATH}' yolundan yükleniyor...")
+    logger.info(f"Metadata '{METADATA_PATH}' yolundan yükleniyor...")
     with open(METADATA_PATH, 'r', encoding='utf-8') as f:
         state["chunks_metadata"] = json.load(f)
 
 def check_source_documents():
     if not SOURCE_DOCUMENTS_PATH.is_dir():
-        print(f"UYARI: Kaynak dokümanlar klasörü bulunamadı: {SOURCE_DOCUMENTS_PATH}")
-        print("PDF indirme ve listeleme özelliği çalışmayabilir.")
+        logger.info(f"UYARI: Kaynak dokümanlar klasörü bulunamadı: {SOURCE_DOCUMENTS_PATH}")
+        logger.info("PDF indirme ve listeleme özelliği çalışmayabilir.")
     else:
-        print(f"Kaynak dokümanlar klasörü bulundu: {SOURCE_DOCUMENTS_PATH}")
+        logger.info(f"Kaynak dokümanlar klasörü bulundu: {SOURCE_DOCUMENTS_PATH}")
 
 @app.on_event("startup")
 def startup_event():
-    print("Uygulama başlatılıyor...")
+    logger.info("Uygulama başlatılıyor...")
     load_dotenv()
 
     load_gemini_model()
@@ -105,12 +127,12 @@ def startup_event():
         load_embedding_model()
         load_faiss_index()
         load_metadata()
-        print("Uygulama başarıyla başlatıldı ve kullanıma hazır!")
+        logger.info("Uygulama başarıyla başlatıldı ve kullanıma hazır!")
     except FileNotFoundError as e:
-        print(f"KRİTİK HATA: Gerekli bir dosya bulunamadı: {e}")
-        print("Lütfen 'create_database_local.py' scriptini çalıştırdığınızdan ve 'data' klasörünün Docker imajına eklendiğinden emin olun.")
+        logger.info(f"KRİTİK HATA: Gerekli bir dosya bulunamadı: {e}")
+        logger.info("Lütfen 'create_database_local.py' scriptini çalıştırdığınızdan ve 'data' klasörünün Docker imajına eklendiğinden emin olun.")
     except Exception as e:
-        print(f"Başlatma sırasında beklenmedik bir hata oluştu: {e}")
+        logger.info(f"Başlatma sırasında beklenmedik bir hata oluştu: {e}")
 
     check_source_documents()
 
@@ -151,7 +173,7 @@ def is_it_meta_question(user_question: str) -> Optional[AnswerResponse]:
 
     for keywords, answer in meta_questions_keywords.items():
         if any(keyword in user_question for keyword in keywords):
-            print(f"Meta soru tespit edildi: {user_question}")
+            logger.info(f"Meta soru tespit edildi: {user_question}")
             return AnswerResponse(answer=answer, sources=[])
 
     return None
@@ -245,9 +267,10 @@ def send_api_request_for_categorize(question: str):
     
     try:
         response = state["generative_model"].generate_content(build_prompt_for_categorize(question))
+        logger.info(f"Gemini API kategorize cevabı: {response.text.strip()}")
         return response.text
     except Exception as e:
-        print(f"Gemini API kategorize hatası: {e}")
+        logger.info(f"Gemini API kategorize hatası: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Soru kategorize edilirken bir hata oluştu."
@@ -279,6 +302,9 @@ def build_prompt(question: str, context: str) -> str:
     """
     Kullanıcının sorusuna cevap vermek için kullanılacak prompt'u oluşturur.
     """
+
+    logger.info(f"'{question}' sorusu için bulunan bağlam:\n{context}") 
+
     return f"""
     Sen, Adnan Menderes Üniversitesi Öğrenci İşleri için çalışan bir yardım asistanısın. Görevin, yalnızca aşağıda verilen 'Bağlam' metnine dayanarak kullanıcının sorusuna cevap vermektir. 
 
@@ -303,7 +329,7 @@ def send_api_request(prompt: str):
         response = state["generative_model"].generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Gemini API hatası: {e}")
+        logger.info(f"Gemini API hatası: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Cevap üretilirken bir hata oluştu."
@@ -324,7 +350,7 @@ def ask_question(request: QuestionRequest):
 
     allowed_files = take_filenames_from_sources(categories, CATEGORIES_DATA_PATH) # Kategorilere göre dosya adlarını al
 
-    print(f"Kategoriler: {categories}, İzin verilen dosyalar: {allowed_files}")
+    # logger.info(f"Kategoriler: {categories}, İzin verilen dosyalar: {allowed_files}")
 
     context, sources_rag = get_context_parts(request.question,k=7,allowed_sources=allowed_files) # Cevap için bağlamı ve kaynakları al
 
@@ -339,7 +365,7 @@ async def get_sources_list():
     Her dosya için adını ve indirme URL'sini döndürür.
     """
     if not SOURCE_DOCUMENTS_PATH.is_dir(): # Kaynak dokümanlar klasörü kontrolü
-        print(f"Hata: Kaynak dokümanlar klasörü bulunamadı: {SOURCE_DOCUMENTS_PATH}")
+        logger.info(f"Hata: Kaynak dokümanlar klasörü bulunamadı: {SOURCE_DOCUMENTS_PATH}")
         return []
 
     pdf_files = []
@@ -351,7 +377,7 @@ async def get_sources_list():
             })
     
     if not pdf_files: # Eğer klasörde PDF dosyası yoksa
-        print(f"Bilgi: {SOURCE_DOCUMENTS_PATH} klasöründe PDF dosyası bulunamadı.") 
+        logger.info(f"Bilgi: {SOURCE_DOCUMENTS_PATH} klasöründe PDF dosyası bulunamadı.") 
 
     return pdf_files
 
