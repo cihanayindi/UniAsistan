@@ -43,23 +43,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #4338ca;
         }
-        .typing-indicator span {
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        @keyframes bounce {
-            0%, 80%, 100% {
-                transform: scale(0);
-            }
-            40% {
-                transform: scale(1.0);
-            }
-        }
         .user-bubble {
             border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
         }
@@ -86,6 +69,26 @@
         }
         .animate-fadeInUp {
             animation: fadeInUp 0.5s ease-out forwards;
+        }
+        /* Skeleton loading animation */
+        @keyframes pulse-bg {
+            0%, 100% {
+                background-color: #e2e8f0;
+            }
+            50% {
+                background-color: #cbd5e1;
+            }
+        }
+        .dark @keyframes pulse-bg {
+             0%, 100% {
+                background-color: #334155;
+            }
+            50% {
+                background-color: #475569;
+            }
+        }
+        .animate-pulse-bg {
+            animation: pulse-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
@@ -349,19 +352,19 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        // "Yazıyor..." added indicator
+        // Use skeleton loader instead of typing indicator
         function showTypingIndicator() {
             submitButton.disabled = true;
             messageInput.disabled = true;
             const indicatorWrapper = document.createElement('div');
             indicatorWrapper.id = 'typing-indicator';
-            indicatorWrapper.classList.add('flex', 'justify-start', 'w-full', 'items-end', 'animate-fadeInUp'); // Also animate typing indicator
+            indicatorWrapper.classList.add('flex', 'justify-start', 'w-full', 'items-end', 'animate-fadeInUp');
             indicatorWrapper.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 mr-3 flex-shrink-0"></div>
-                <div class="bg-white dark:bg-slate-700 bot-bubble shadow-md p-4 flex items-center space-x-2">
-                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
-                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
-                    <span class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
+                <div class="bot-bubble shadow-md flex flex-col space-y-2 p-4">
+                    <div class="h-2 w-32 rounded animate-pulse-bg"></div>
+                    <div class="h-2 w-48 rounded animate-pulse-bg"></div>
+                    <div class="h-2 w-24 rounded animate-pulse-bg"></div>
                 </div>
             `;
             chatHistory.appendChild(indicatorWrapper);
@@ -383,6 +386,9 @@
             const ASK_ENDPOINT = `${API_URL}/ask`;
             
             try {
+                // Simulate network delay for demo
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
                 const response = await fetch(ASK_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -411,11 +417,11 @@
                         const encodedSource = encodeURIComponent(source);
                         const downloadUrl = `${API_URL}/download_source/${encodedSource}`;
                         
-                        return `<li class="break-words"><a href="${downloadUrl}" target="_blank" download class="text-indigo-600 hover:text-indigo-800 hover:underline font-medium">${source}</a></li>`;
+                        return `<li class="break-words"><a href="${downloadUrl}" target="_blank" download class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline font-medium">${source}</a></li>`;
                     }).join('');
 
                     fullAnswerHTML += `<div class="mt-4">
-                                       <strong>Kaynaklar:</strong>
+                                       <strong class="dark:text-slate-300">Kaynaklar:</strong>
                                        <ul class="list-disc list-inside mt-1 space-y-1">${sourcesHTML}</ul>
                                    </div>`;
                 }
