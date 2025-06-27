@@ -140,7 +140,6 @@
     </div>
 
         <script>
-        // DOM elementlerini seç
         const welcomeScreen = document.getElementById('welcome-screen');
         const chatHistory = document.getElementById('chat-history');
         const chatContainer = document.getElementById('chat-container');
@@ -149,14 +148,12 @@
         const faqButtonsContainer = document.getElementById('faq-buttons');
         const submitButton = chatForm.querySelector('button[type="submit"]');
 
-        // --- DEĞİŞİKLİK 1: API URL'sini burada merkezi olarak tanımla ---
-        // Canlıya çıkarken bu satırı değiştirmen yeterli olacak.
-        // const API_URL = 'https://uniasistan.social'; // Canlı sunucu adresi
-        const API_URL = 'http://localhost:8000';   // Yerel geliştirme adresi
+        // API URL'yi merkezi bir değişken olarak tanımla
+        const API_URL = 'https://uniasistan.social'; // Canlı sunucu adresi
+        // const API_URL = 'http://localhost:8000';   // Yerel geliştirme adresi
 
         let isChatStarted = false;
         
-        // Sıkça Sorulan Sorular için tam metinleri bir map'te tutalım
         const faqQuestions = {
             "Staj yönergesi": "Staj yönergesinin amacı nedir?",
             "Ders kayıtları": "Ders kayıtları ne zaman?",
