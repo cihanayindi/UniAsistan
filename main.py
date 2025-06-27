@@ -167,6 +167,7 @@ def is_it_meta_question(user_question: str) -> Optional[AnswerResponse]:
     (e.g., "Sen kimsin?", "Kim geliştirdi?", "Amacın ne?").
     If it is, returns a predefined answer.
     """
+    
     meta_questions_keywords = {
         ("sen kimsin", "kimsin sen", "nesin sen", "sen nesin"): 
             "Ben Cihan Ayindi tarafından ADÜ Öğrencilerine Öğrenci işlerine sorulabilecek konularda yardımcı olması amacıyla geliştirilmiş bir RAG sistemiyim.",
@@ -174,6 +175,28 @@ def is_it_meta_question(user_question: str) -> Optional[AnswerResponse]:
             "Ben Cihan Ayindi tarafından geliştirildim.",
         ("amacın ne", "ne işe yararsın", "görevin ne"): 
             "Amacım, Adnan Menderes Üniversitesi öğrencilerine öğrenci işleriyle ilgili konularda yardımcı olmaktır. (Ve Cihan Ayindi'ye staj bulmasında yardımcı olmak :) )",
+        # 1. Hal Hatır Sorma / Duygusal Durum
+        ("nasılsın", "iyi misin", "keyfin nasıl", "ne var ne yok"):
+            "Teşekkür ederim, iyiyim! Sana yardımcı olabildiğim sürece enerjim hep yüksek. Umarım sen de iyisindir. Hangi konuda bilgi almak istersin?",
+        # 2. Yetenek ve Sınırlar
+        ("neler yapabilirsin", "başka ne biliyorsun", "yeteneğin ne"):
+            "Adnan Menderes Üniversitesi'nin yönetmelik, yönerge ve akademik kuralları hakkında sorularını cevaplayabilirim. Örneğin, 'staj başvurusu nasıl yapılır?' veya 'ders kayıt tarihleri ne zaman?' gibi sorular sorabilirsin.",
+        ("ne yapamazsın", "bilmediğin ne var", "sınırların ne"):
+            "Kişisel fikir belirtmem, yorum yapmam veya kişisel bilgilerine erişemem. Ayrıca, sistemimde yüklü olmayan veya güncel olmayan konular hakkında da bilgi veremem. Sadece bana öğretilen dokümanlar çerçevesinde cevaplar üretiyorum.",
+        # 3. Teşekkür ve Vedalaşma
+        ("teşekkür ederim", "teşekkürler", "sağ ol", "eyvallah"):
+            "Rica ederim! Başka bir sorun olursa çekinme, yine beklerim.",
+        ("görüşürüz", "hoşça kal", "bay bay"):
+            "Görüşmek üzere! Başarılar dilerim.",
+        # 4. Şaka ve Eğlence
+        ("şaka yap", "fıkra anlat"):
+            "Öğrenci işleri o kadar ciddi bir konu ki şaka yapmaya kodlarım izin vermiyor. :) Ama istersen sana bütünleme sınavı yönetmeliğini anlatabilirim, belki daha eğlencelidir?",
+        # 5. Bilgi Kaynağı
+        ("bilgileri nereden alıyorsun", "kaynağın ne", "emin misin"):
+            "Cevaplarımı, geliştiricim tarafından bana sunulan Aydın Adnan Menderes Üniversitesi'nin resmi internet sitesinde yayınlanmış güncel yönetmelik ve yönerge PDF'lerinden alıyorum. Verdiğim cevapların altında kaynak dokümanları da listeliyorum.",
+        # 6. Gerçek Zamanlı Bilgiler (Veremeyeceğini Belirtme)
+        ("saat kaç", "bugün ayın kaçı", "hava nasıl"):
+            "Benim saat, takvim veya hava durumu gibi gerçek zamanlı bilgilere erişimim yok. Sana sadece ADÜ öğrenci işleri dokümanları hakkında bilgi verebilirim."
     }
 
     for keywords, answer in meta_questions_keywords.items():
