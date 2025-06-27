@@ -251,8 +251,8 @@
         
         // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
         async function fetchBotResponse(question) {
-            //const API_URL = 'https://uniasistan.social/ask'; // Canlı DigitalOcean API adresi
-            const API_URL = 'http://localhost:8000/ask'; // Geliştirme için yerel API adresi
+            const API_URL = 'https://uniasistan.social/ask'; // Canlı DigitalOcean API adresi
+            // const API_URL = 'http://localhost:8000/ask'; // Geliştirme için yerel API adresi
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
