@@ -12,32 +12,31 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             body {
-            font-family: 'Inter', sans-serif;
-            scroll-behavior: smooth;
-            /* Ensure body doesn't cause main scroll */
-            overflow: hidden;
+                font-family: 'Inter', sans-serif;
+                scroll-behavior: smooth;
+                overflow: hidden; /* Ana kaydırma çubuğunu engelle */
             }
-            /* Kaydırma çubuğu stilleri */
-            /* Bu stiller overflow: auto olan elemente uygulanacaktır */
+            /* Özel kaydırma çubuğu stilleri */
             ::-webkit-scrollbar {
-            width: 8px;
+                width: 8px;
             }
             ::-webkit-scrollbar-track {
-            background: #e2e8f0;
+                background: #e2e8f0;
             }
             ::-webkit-scrollbar-thumb {
-            background: #4f46e5; /* Ana temaya uygun bir renk */
-            border-radius: 10px;
+                background: #4f46e5; /* Ana temaya uygun renk */
+                border-radius: 10px;
             }
             ::-webkit-scrollbar-thumb:hover {
-            background: #4338ca;
-        }
+                background: #4338ca;
+            }
         </style>
     </head>
 <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
+
 <!-- Ana Container: Sabit yükseklik ve flex düzeni -->
 <div class="container mx-auto max-w-3xl bg-white rounded-2xl shadow-2xl shadow-indigo-200/50 overflow-hidden h-[90vh] flex flex-col">
-    <!-- Başlık Alanı (Sabit kalacak) -->
+    <!-- Başlık Alanı (Sabit) -->
     <div class="p-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white flex items-center justify-between shadow-lg flex-shrink-0">
         <div>
             <h1 class="text-2xl font-bold">Kaynak Dosyalar</h1>
@@ -52,9 +51,19 @@
         </a>
     </div>
 
-    <!-- PDF Files area-->
+    <!-- Filtreleme Kontrolü -->
+    <div class="p-6 md:p-8 md:pb-4 border-b border-slate-200 flex-shrink-0">
+        <label for="category-filter" class="block text-sm font-medium text-slate-700 mb-2">Kategoriye Göre Filtrele:</label>
+        <select id="category-filter" name="category" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 transition">
+            <option selected value="all">Tüm Kategoriler</option>
+            <!-- Kategoriler JavaScript ile doldurulacak -->
+        </select>
+    </div>
+
+
+    <!-- PDF Dosyaları Alanı (Kaydırılabilir) -->
     <div id="pdf-list-container" class="p-6 md:p-8 space-y-4 flex-1 overflow-y-auto">
-        <!-- Loading Message -->
+        <!-- Yükleniyor Mesajı -->
         <div id="loading-message" class="flex items-center justify-center text-slate-500 py-10">
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -62,7 +71,7 @@
             </svg>
             Kaynaklar yükleniyor...
         </div>
-        <!-- List of PDF files will come here -->
+        <!-- PDF dosyalarının listesi buraya gelecek -->
     </div>
 </div>
 
@@ -70,30 +79,47 @@
     document.addEventListener('DOMContentLoaded', () => {
         const pdfListContainer = document.getElementById('pdf-list-container');
         const loadingMessage = document.getElementById('loading-message');
-        
-        // Backend API URL'si. Bu URL, PDF listesini JSON formatında döndürmelidir.
-        // Örnek: [{ "name": "Staj Yönergesi.pdf", "url": "/api/download/staj_yonergesi.pdf" }, ...]
-        // UniAsistan API'nizin temel URL'sini kullanın.
-        const API_BASE_URL = 'https://uniasistan.social'; // index.html'deki API ile aynı olmalı
-        const KAYNAKLAR_API_URL = `${API_BASE_URL}/get_sourceslist`; // PDF listesi için yeni bir endpoint
+        const categoryFilter = document.getElementById('category-filter');
+        const fileCountElement = document.getElementById('file-count');
 
-        async function fetchPdfList() {
+        // Global değişkenler tüm dosyaları ve kategori verilerini saklamak için
+        let allPdfFiles = [];
+        let categoriesData = {};
+
+        const API_BASE_URL = 'https://uniasistan.social';
+        const KAYNAKLAR_API_URL = `${API_BASE_URL}/get_sourceslist`;
+        const CATEGORY_JSON_URL = 'source_documents/category.json'; // Kategori dosyasının yolu
+
+        // Hem PDF listesini hem de kategorileri asenkron olarak çeken fonksiyon
+        async function fetchAllData() {
             try {
-                const response = await fetch(KAYNAKLAR_API_URL);
+                // Her iki isteği aynı anda başlat
+                const [pdfResponse, categoryResponse] = await Promise.all([
+                    fetch(KAYNAKLAR_API_URL),
+                    fetch(CATEGORY_JSON_URL)
+                ]);
                 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ detail: `Sunucudan hatalı yanıt: ${response.status}` }));
-                    let errorMessage = errorData.detail || `API Hatası: ${response.status} ${response.statusText}`;
+                // PDF API yanıtını kontrol et
+                if (!pdfResponse.ok) {
+                    const errorData = await pdfResponse.json().catch(() => ({ detail: `Sunucudan hatalı yanıt: ${pdfResponse.status}` }));
+                    let errorMessage = errorData.detail || `API Hatası: ${pdfResponse.status} ${pdfResponse.statusText}`;
                     throw new Error(errorMessage);
                 }
+                 // Kategori dosyası yanıtını kontrol et
+                if (!categoryResponse.ok) {
+                    throw new Error(`Kategori dosyası (${CATEGORY_JSON_URL}) yüklenemedi: ${categoryResponse.status}`);
+                }
                 
-                const pdfFiles = await response.json();
-                const numberOfFiles = pdfFiles.length;
-                document.getElementById("file-count").textContent = `Sistemdeki toplam belge sayısı: ${numberOfFiles}`;
-                renderPdfList(pdfFiles);
+                allPdfFiles = await pdfResponse.json();
+                categoriesData = await categoryResponse.json();
+                
+                // Veriler yüklendikten sonra ilk kurulum
+                updateFileCount(allPdfFiles.length);
+                populateCategoryFilter();
+                renderPdfList(allPdfFiles); // Başlangıçta tüm dosyaları göster
 
             } catch (error) {
-                console.error("Kaynak listesi alınırken hata oluştu:", error);
+                console.error("Veri alınırken hata oluştu:", error);
                 if (loadingMessage) loadingMessage.remove();
                 pdfListContainer.innerHTML = `
                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
@@ -103,11 +129,49 @@
             }
         }
 
+        // Toplam dosya sayısını güncelleyen fonksiyon
+        function updateFileCount(count) {
+             if(fileCountElement) {
+                fileCountElement.textContent = `Sistemdeki toplam belge sayısı: ${count}`;
+             }
+        }
+
+        // Kategori filtresi (dropdown) seçeneklerini dolduran fonksiyon
+        function populateCategoryFilter() {
+            if (!categoryFilter) return;
+
+            // Kategorileri JSON'dan al ve dropdown'a ekle
+            Object.keys(categoriesData).sort().forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+        }
+
+        // Kategori seçimi değiştiğinde tetiklenen fonksiyon
+        function handleFilterChange() {
+            const selectedCategory = this.value;
+            let filteredFiles;
+
+            if (selectedCategory === 'all') {
+                filteredFiles = allPdfFiles;
+            } else {
+                // Seçilen kategorideki dosya adlarını al
+                const fileNamesInCategory = categoriesData[selectedCategory] || [];
+                // Ana PDF listesini bu adlara göre filtrele
+                filteredFiles = allPdfFiles.filter(pdf => fileNamesInCategory.includes(pdf.name));
+            }
+            renderPdfList(filteredFiles);
+        }
+
+        // PDF listesini arayüze döken fonksiyon
         function renderPdfList(pdfFiles) {
-            if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
+            if (loadingMessage) loadingMessage.style.display = 'none';
+            pdfListContainer.innerHTML = ''; // Her render öncesi listeyi temizle
 
             if (!pdfFiles || pdfFiles.length === 0) {
-                pdfListContainer.innerHTML = '<p class="text-slate-500 text-center py-5">Gösterilecek kaynak dosya bulunamadı.</p>';
+                pdfListContainer.innerHTML = '<p class="text-slate-500 text-center py-5">Bu kategoride gösterilecek kaynak dosya bulunamadı.</p>';
                 return;
             }
 
@@ -119,7 +183,7 @@
                 li.className = 'py-4 flex justify-between items-center hover:bg-slate-50 transition-colors px-2 rounded-md';
 
                 const fileInfoDiv = document.createElement('div');
-                fileInfoDiv.className = 'flex items-center space-x-3';
+                fileInfoDiv.className = 'flex items-center space-x-3 overflow-hidden'; // Taşan metin için
 
                 const fileIcon = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -128,13 +192,11 @@
                 fileInfoDiv.innerHTML = fileIcon;
 
                 const fileNameSpan = document.createElement('span');
-                fileNameSpan.textContent = pdf.name || 'İsimsiz Dosya'; // Backend'den "name" alanı gelmeli
-                fileNameSpan.className = 'text-slate-700 font-medium text-sm md:text-base';
+                fileNameSpan.textContent = pdf.name || 'İsimsiz Dosya';
+                fileNameSpan.className = 'text-slate-700 font-medium text-sm md:text-base truncate'; // Uzun isimler için
+                fileNameSpan.title = pdf.name || 'İsimsiz Dosya'; // Tam adı hover'da göster
                 fileInfoDiv.appendChild(fileNameSpan);
                 
-                // Backend'den gelen URL'nin tam URL olduğunu varsayıyoruz.
-                // Eğer göreceli path ise, API_BASE_URL ile birleştirmeniz gerekebilir.
-                // Örneğin: const downloadUrl = pdf.url.startsWith('/') ? `${API_BASE_URL}${pdf.url}` : pdf.url;
                 const downloadUrl = `${API_BASE_URL}${pdf.url}`;
 
                 const downloadLink = document.createElement('a');
@@ -143,10 +205,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 inline-block" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>İndir`;
-                downloadLink.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-md text-xs md:text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50';
-                downloadLink.setAttribute('target', '_blank'); // İndirmeyi yeni sekmede başlatır veya mevcut sekmede tetikler
-                // `download` özniteliği, tarayıcıya dosyayı indirmesini ve verilen ismi kullanmasını önerir.
-                // En güvenilir yöntem, backend'in `Content-Disposition: attachment; filename="dosya_adi.pdf"` başlığını ayarlamasıdır.
+                downloadLink.className = 'flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-md text-xs md:text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50';
+                downloadLink.setAttribute('target', '_blank');
                 downloadLink.setAttribute('download', pdf.name || 'kaynak_dosya.pdf'); 
 
                 li.appendChild(fileInfoDiv);
@@ -157,8 +217,11 @@
             pdfListContainer.appendChild(ul);
         }
 
-        // Sayfa yüklendiğinde PDF listesini çek
-        fetchPdfList();
+        // Filtre dropdown'ına event listener ekle
+        categoryFilter.addEventListener('change', handleFilterChange);
+
+        // Sayfa yüklendiğinde verileri çek ve sayfayı oluştur
+        fetchAllData();
     });
 </script>
 </body>
