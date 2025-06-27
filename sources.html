@@ -30,6 +30,10 @@
             ::-webkit-scrollbar-thumb:hover {
                 background: #4338ca;
             }
+            /* Remove default search cancel button */
+            input[type="search"]::-webkit-search-cancel-button {
+                -webkit-appearance: none;
+            }
         </style>
     </head>
 <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
@@ -52,12 +56,27 @@
     </div>
 
     <!-- Filtreleme Kontrolü -->
-    <div class="p-6 md:p-8 md:pb-4 border-b border-slate-200 flex-shrink-0">
-        <label for="category-filter" class="block text-sm font-medium text-slate-700 mb-2">Kategoriye Göre Filtrele:</label>
-        <select id="category-filter" name="category" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 transition">
-            <option selected value="all">Tüm Kategoriler</option>
-            <!-- Kategoriler JavaScript ile doldurulacak -->
-        </select>
+    <div class="p-6 md:p-8 md:pb-4 border-b border-slate-200 flex-shrink-0 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="category-filter" class="block text-sm font-medium text-slate-700 mb-2">Kategoriye Göre Filtrele:</label>
+                <select id="category-filter" name="category" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 transition">
+                    <option selected value="all">Tüm Kategoriler</option>
+                    <!-- Kategoriler JavaScript ile doldurulacak -->
+                </select>
+            </div>
+            <div>
+                 <label for="search-input" class="block text-sm font-medium text-slate-700 mb-2">Dosya Adına Göre Ara:</label>
+                 <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                         <svg class="w-5 h-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                         </svg>
+                    </div>
+                    <input type="search" id="search-input" placeholder="Örn: staj, yönetmelik..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 pl-10 transition">
+                 </div>
+            </div>
+        </div>
     </div>
 
 
@@ -92,6 +111,7 @@
         const loadingMessage = document.getElementById('loading-message');
         const categoryFilter = document.getElementById('category-filter');
         const fileCountElement = document.getElementById('file-count');
+        const searchInput = document.getElementById('search-input'); // NEW: Get the search input
 
         // Global değişkenler tüm dosyaları ve kategori verilerini saklamak için
         let allPdfFiles = [];
@@ -127,7 +147,7 @@
                 // Veriler yüklendikten sonra ilk kurulum
                 updateFileCount(allPdfFiles.length);
                 populateCategoryFilter();
-                renderPdfList(allPdfFiles); // Başlangıçta tüm dosyaları göster
+                applyFilters(); // Initial render
 
             } catch (error) {
                 console.error("Veri alınırken hata oluştu:", error);
@@ -159,20 +179,27 @@
                 categoryFilter.appendChild(option);
             });
         }
+        
+        // NEW: Central function to apply both search and category filters
+        function applyFilters() {
+            const selectedCategory = categoryFilter.value;
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            let filteredFiles = allPdfFiles;
 
-        // Kategori seçimi değiştiğinde tetiklenen fonksiyon
-        function handleFilterChange() {
-            const selectedCategory = this.value;
-            let filteredFiles;
-
-            if (selectedCategory === 'all') {
-                filteredFiles = allPdfFiles;
-            } else {
-                // Seçilen kategorideki dosya adlarını al
+            // Apply category filter first
+            if (selectedCategory !== 'all') {
                 const fileNamesInCategory = categoriesData[selectedCategory] || [];
-                // Ana PDF listesini bu adlara göre filtrele
-                filteredFiles = allPdfFiles.filter(pdf => fileNamesInCategory.includes(pdf.name));
+                filteredFiles = filteredFiles.filter(pdf => fileNamesInCategory.includes(pdf.name));
             }
+
+            // Then apply search filter on the result
+            if (searchTerm) {
+                filteredFiles = filteredFiles.filter(pdf => 
+                    pdf.name.toLowerCase().includes(searchTerm)
+                );
+            }
+
             renderPdfList(filteredFiles);
         }
 
@@ -182,7 +209,7 @@
             pdfListContainer.innerHTML = ''; // Her render öncesi listeyi temizle
 
             if (!pdfFiles || pdfFiles.length === 0) {
-                pdfListContainer.innerHTML = '<p class="text-slate-500 text-center py-5">Bu kategoride gösterilecek kaynak dosya bulunamadı.</p>';
+                pdfListContainer.innerHTML = '<p class="text-slate-500 text-center py-5">Filtreyle eşleşen kaynak dosya bulunamadı.</p>';
                 return;
             }
 
@@ -228,8 +255,9 @@
             pdfListContainer.appendChild(ul);
         }
 
-        // Filtre dropdown'ına event listener ekle
-        categoryFilter.addEventListener('change', handleFilterChange);
+        // Add event listeners to both filters
+        categoryFilter.addEventListener('change', applyFilters);
+        searchInput.addEventListener('input', applyFilters); // 'input' event for real-time search
 
         // Sayfa yüklendiğinde verileri çek ve sayfayı oluştur
         fetchAllData();
