@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from dotenv import load_dotenv
-from fastapi.responses import FileResponse # Dosya indirme için eklendi
+from fastapi.responses import FileResponse
 from typing import Optional, Set, Tuple
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -52,7 +52,6 @@ class AnswerResponse(BaseModel):
     answer: str
     sources: list[str]
 
-# Yeni Pydantic Model (isteğe bağlı ama iyi pratik)
 class SourceFile(BaseModel):
     name: str
     url: str
@@ -66,10 +65,10 @@ app = FastAPI(
 
 # CORS Middleware
 origins = [
-    "https://uniasistan.vercel.app",
-    "http://localhost:8080", # Frontend development için
-    "http://127.0.0.1:8080", # Frontend development için
-    "null", # Lokal HTML dosyalarını açarken (file://) bazen origin null olur
+    "https://uniasistan.vercel.app", # Live deployment
+    "http://localhost:8080", # For local development
+    "http://127.0.0.1:8080",
+    "null", 
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -87,6 +86,7 @@ state = {
     "generative_model": None,
 }
 
+# Startup event to load models and data 
 def load_gemini_model():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -118,6 +118,9 @@ def check_source_documents():
 
 @app.on_event("startup")
 def startup_event():
+    """
+    When the application starts, this function is called to load models and data.
+    """
     logger.info("Uygulama başlatılıyor...")
     load_dotenv()
 
@@ -139,12 +142,13 @@ def startup_event():
 # --- API Endpoints ---
 @app.get("/")
 async def root():
+    """Main endpoint to check if the API is running."""
     return {"message": "UniAsistan API çalışıyor!"}
 
 def check_models_loaded():
     """
-    Modellerin ve veritabanının yüklü olup olmadığını kontrol eder.
-    Eğer yüklenmemişse, HTTP 503 hatası fırlatır.
+    Its checks if all necessary models and data are loaded.
+    If not, raises a 503 Service Unavailable error.
     """
     if not all([
         state["embedding_model"],
@@ -159,12 +163,13 @@ def check_models_loaded():
     
 def is_it_meta_question(user_question: str) -> Optional[AnswerResponse]:
     """
-    Kullanıcının sorusunun meta bir soru olup olmadığını kontrol eder.
-    Meta sorular, sistemin kendisi veya amacıyla ilgili sorulardır.
+    Its checks if the user's question is a meta question
+    (e.g., "Sen kimsin?", "Kim geliştirdi?", "Amacın ne?").
+    If it is, returns a predefined answer.
     """
     meta_questions_keywords = {
         ("sen kimsin", "kimsin sen", "nesin sen", "sen nesin"): 
-            "Ben Cihan Ayindi tarafından ADÜ Öğrencilerine Öğrenci işlerinde sorulabilecek konularda öğrencilere yardımcı olması amacıyla geliştirilmiş bir RAG sistemiyim.",
+            "Ben Cihan Ayindi tarafından ADÜ Öğrencilerine Öğrenci işlerine sorulabilecek konularda yardımcı olması amacıyla geliştirilmiş bir RAG sistemiyim.",
         ("kim geliştirdi", "geliştiricin kim", "seni kim yaptı"): 
             "Ben Cihan Ayindi tarafından geliştirildim.",
         ("amacın ne", "ne işe yararsın", "görevin ne"): 
@@ -182,25 +187,17 @@ def get_context_parts(
     question: str,
     k: int = 7,
     allowed_sources: Optional[Set[str]] = None
-) -> Tuple[str, Set[str]]:
+    ) -> Tuple[str, Set[str]]:
     """
-    Soru için embedding hesaplar, FAISS üzerinden arama yapar,
-    sadece allowed_sources içinde olan chunk'lardan k adet içerik döner.
-
-    Args:
-        question (str): Kullanıcının sorduğu soru.
-        k (int): Döndürülecek içerik parça sayısı.
-        allowed_sources (Optional[Set[str]]): İzin verilen kaynak dosya isimleri.
-
-    Returns:
-        Tuple[str, Set[str]]: Birleşik içerik metni ve içeriklerin kaynak dosya isimleri.
+    For a given question, retrieves relevant context parts from the FAISS index.
+    If allowed_sources is provided, filters the results to only include those sources.
     """
 
     question_vector = state["embedding_model"].encode(
         [question], normalize_embeddings=True
     ).astype("float32")
 
-    # Daha fazla chunk çekiyoruz ki filtre sonrası yeterli sayıda kalabilsin
+    # We use k * 3 to ensure we get enough results, as some may be filtered out
     distances, indices = state["faiss_index"].search(question_vector, k * 3)
 
     if not indices.size:
@@ -213,7 +210,7 @@ def get_context_parts(
         chunk_meta = state["chunks_metadata"][idx]
         source = chunk_meta["kaynak"]
 
-        # Eğer allowed_sources tanımlıysa ve kaynak izin verilenlerde değilse atla
+        # If allowed_sources is provided, filter by source
         if allowed_sources is not None and source not in allowed_sources:
             continue
 
@@ -230,7 +227,7 @@ def get_context_parts(
 
 def build_prompt_for_categorize(question: str) -> str:
     """
-    Kullanıcının sorusunu kategorize etmek için kullanılacak prompt'u oluşturur.
+    Is a helper function to build the prompt for categorizing the user's question.
     """
     return f"""
     Aşağıdaki kullanıcı sorusu, hangi kategorilerle en çok ilişkilidir? Kategoriler aşağıda listelenmiştir. Lütfen yalnızca en uygun 3 kategoriyi sırasıyla belirt.
@@ -262,7 +259,7 @@ def build_prompt_for_categorize(question: str) -> str:
 
 def send_api_request_for_categorize(question: str):
     """
-    Google Gemini API'sine soru kategorize etme isteği gönderir.
+    It sends a request to the Gemini API to categorize the user's question.
     """
     
     try:
@@ -278,14 +275,8 @@ def send_api_request_for_categorize(question: str):
 
 def take_filenames_from_sources(categories: list[str], json_path: str) -> set[str]:
     """
-    Kategorilere ait dosya adlarını category.json'dan alır.
-
-    Args:
-        categories (list[str]): Seçilen kategori isimleri
-        json_path (str): category.json dosyasının yolu
-
-    Returns:
-        set[str]: İlgili kategoriye ait dosya adları
+    It retrieves the file names associated with the given categories
+    from the category file map stored in a JSON file.
     """
     with open(json_path, 'r', encoding='utf-8') as f:
         category_file_map = json.load(f)
@@ -300,7 +291,8 @@ def take_filenames_from_sources(categories: list[str], json_path: str) -> set[st
 
 def build_prompt(question: str, context: str) -> str:
     """
-    Kullanıcının sorusuna cevap vermek için kullanılacak prompt'u oluşturur.
+    It builds the prompt for the Gemini API based on the user's question and the context.
+    The context is the relevant information retrieved from the FAISS index.
     """
 
     logger.info(f"'{question}' sorusu için bulunan bağlam:\n{context}") 
@@ -323,8 +315,7 @@ def build_prompt(question: str, context: str) -> str:
 
 def send_api_request(prompt: str):
     """
-    Google Gemini API'sine istek gönderir ve cevabı döndürür.
-    """
+    It sends a request to the Gemini API to generate an answer based on the user's question and context."""
     try:
         response = state["generative_model"].generate_content(prompt)
         return response.text
@@ -337,44 +328,49 @@ def send_api_request(prompt: str):
 
 @app.post("/ask", response_model=AnswerResponse)
 def ask_question(request: QuestionRequest):
-    check_models_loaded()  # Modellerin yüklü olup olmadığını kontrol et 
+    """
+    It handles the user's question, checks if models are loaded,
+    categorizes the question, retrieves relevant context,
+    builds the prompt, and sends it to the Gemini API to get an answer.
+    """
+    check_models_loaded()  # Check if models are loaded
     
-    user_question_lower = request.question.lower().strip() # Soru metnini küçük harfe çevir ve baştaki/sondaki boşlukları temizle
+    user_question_lower = request.question.lower().strip() # Change the question to lowercase and strip whitespace
 
-    meta_answer = is_it_meta_question(user_question_lower) # Meta bir soru mu kontrol et
+    meta_answer = is_it_meta_question(user_question_lower) # Check if the question is a meta question
     if meta_answer:
-        return meta_answer  # Eğer meta bir soruysa, direkt cevabı dön
+        return meta_answer  # If it is a meta question, return the predefined answer
     
-    categories_raw = send_api_request_for_categorize(request.question).split(",")
+    categories_raw = send_api_request_for_categorize(request.question).split(",") # Categorize the question using Gemini API
     categories = [cat.strip().strip('"') for cat in categories_raw]
 
-    allowed_files = take_filenames_from_sources(categories, CATEGORIES_DATA_PATH) # Kategorilere göre dosya adlarını al
+    allowed_files = take_filenames_from_sources(categories, CATEGORIES_DATA_PATH) # Take the file names associated with the categories from the category file map
 
-    context, sources_rag = get_context_parts(request.question,k=7,allowed_sources=allowed_files) # Cevap için bağlamı ve kaynakları al
+    context, sources_rag = get_context_parts(request.question,k=7,allowed_sources=allowed_files) # Take the relevant context parts from the FAISS index
 
-    prompt = build_prompt(request.question, context) # Prompt'u oluştur
+    prompt = build_prompt(request.question, context) # Build the prompt for the Gemini API
 
-    return AnswerResponse(answer = send_api_request(prompt), sources=list(sources_rag))
+    return AnswerResponse(answer = send_api_request(prompt), sources=list(sources_rag)) # Send the prompt to the Gemini API and return the answer and sources
 
 @app.get("/get_sourceslist", response_model=list[SourceFile])
 async def get_sources_list():
     """
-    source_documents klasöründeki PDF dosyalarını listeler.
-    Her dosya için adını ve indirme URL'sini döndürür.
+    It retrieves the list of PDF files in the source_documents directory.
+    Returns a list of dictionaries with file names and URLs for downloading.
     """
-    if not SOURCE_DOCUMENTS_PATH.is_dir(): # Kaynak dokümanlar klasörü kontrolü
+    if not SOURCE_DOCUMENTS_PATH.is_dir(): # Check if the source_documents directory exists
         logger.info(f"Hata: Kaynak dokümanlar klasörü bulunamadı: {SOURCE_DOCUMENTS_PATH}")
         return []
 
     pdf_files = []
-    for item in SOURCE_DOCUMENTS_PATH.iterdir(): # Klasördeki her dosyayı kontrol et
+    for item in SOURCE_DOCUMENTS_PATH.iterdir(): # Iterate through the items in the source_documents directory
         if item.is_file() and item.suffix.lower() == ".pdf":
             pdf_files.append({
                 "name": item.name,
-                "url": f"/download_source/{item.name}" # Frontend'in beklediği URL formatı
+                "url": f"/download_source/{item.name}" # Create the URL for downloading the PDF file
             })
     
-    if not pdf_files: # Eğer klasörde PDF dosyası yoksa
+    if not pdf_files: # If no PDF files are found, log a message
         logger.info(f"Bilgi: {SOURCE_DOCUMENTS_PATH} klasöründe PDF dosyası bulunamadı.") 
 
     return pdf_files
@@ -383,12 +379,13 @@ async def get_sources_list():
 @app.get("/download_source/{filename:path}")
 async def download_source_file(filename: str):
     """
-    Belirtilen dosyayı source_documents klasöründen indirir.
-    {filename:path} kullanmak, dosya adında / gibi karakterler olsa bile (pek olası olmasa da)
-    doğru çalışmasını sağlar. Genelde sadece {filename} yeterlidir.
+    It handles the file download request for a specific PDF file.
+    Validates the filename, checks if the file exists, 
+    and returns the file response for download.
+    Raises HTTP exceptions for invalid filename or file not found.
     """
     try:
-        safe_filename = os.path.basename(filename)
+        safe_filename = os.path.basename(filename) # Get the base name of the file to prevent directory traversal attacks
         if safe_filename != filename:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Geçersiz dosya adı.")
 

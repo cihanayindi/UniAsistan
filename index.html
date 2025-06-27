@@ -11,12 +11,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Ana fontu ve yumuşak kaydırma efektini uygula */
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
         }
-        /* Kaydırma çubuğu stilleri */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -30,7 +28,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #4338ca;
         }
-        /* Yazıyor animasyonu için stil */
         .typing-indicator span {
             animation: bounce 1.4s infinite ease-in-out both;
         }
@@ -48,7 +45,6 @@
                 transform: scale(1.0);
             }
         }
-        /* Sohbete özel border-radius */
         .user-bubble {
             border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
         }
@@ -60,7 +56,7 @@
 <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-2xl h-[90vh] bg-white rounded-2xl shadow-2xl shadow-indigo-200/50 flex flex-col overflow-hidden">
-        <!-- Üst Başlık Alanı (Gradient) -->
+        <!-- Top Title (Gradient) -->
         <div class="p-4 bg-gradient-to-r from-indigo-600 to-blue-500 text-white flex items-center space-x-3 shadow-lg">
             <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -73,9 +69,9 @@
             </div>
         </div>
 
-        <!-- Sohbet Alanı -->
+        <!-- Conversation -->
         <div id="chat-container" class="flex-1 p-6 overflow-y-auto bg-slate-50">
-            <!-- Başlangıç Ekranı -->
+            <!-- Start Screen -->
             <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center">
                  <div class="bg-gradient-to-br from-indigo-500 to-blue-500 text-white w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-300/80">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -87,22 +83,22 @@
                  <p class="text-slate-500 mt-1">Size nasıl yardımcı olabilirim?</p>
             </div>
 
-            <!-- Konuşma Geçmişi (Başlangıçta gizli) -->
+            <!-- Chat History -->
             <div id="chat-history" class="hidden space-y-5">
-                <!-- Mesajlar buraya eklenecek -->
+                <!-- Messages will come here -->
             </div>
         </div>
         
-        <!-- Yazı Yazma Alanı -->
+        <!-- For write somethings -->
         <div class="p-4 bg-white/80 backdrop-blur-sm border-t border-slate-200">
-            <!-- Sıkça Sorulan Sorular Butonları -->
+            <!-- FAQ Questions -->
             <div id="faq-buttons" class="flex flex-wrap gap-2 mb-4 justify-center">
                 <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Staj yönergesi</button>
                 <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Ders kayıtları</button>
                 <button class="faq-btn bg-indigo-100 text-indigo-700 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 hover:shadow-md hover:shadow-indigo-100 transition-all">Mezuniyet şartları</button>
             </div>
             
-            <!-- Soru Giriş Formu -->
+            <!-- Question Entry Form -->
             <form id="chat-form" class="flex items-center space-x-3">
                 <input type="text" id="message-input" placeholder="Sorunuzu buraya yazın..." class="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm" autocomplete="off">
                 <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-indigo-200/80 hover:shadow-indigo-300/80">
@@ -112,7 +108,7 @@
                 </button>
             </form>
 
-            <!-- YENİ EKLENEN KAYNAKLAR BUTONU -->
+            <!-- Source Documents Button -->
             <div class="text-center mt-3 mb-2">
                 <a href="sources.html" target="_blank" class="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium text-sm px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-75">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -121,9 +117,8 @@
                     Kaynak Dokümanlara Ulaş
                 </a>
             </div>
-            <!-- YENİ EKLENEN KAYNAKLAR BUTONU SONU -->
 
-             <!-- Footer Alanı: Geliştirici ve GitHub Linkleri -->
+             <!-- My LinkedIn Account and Github Repo for project -->
             <div class="text-center mt-4 flex items-center justify-center space-x-4">
                 <a href="https://www.cihanayindi.com" target="_blank" rel="noopener noreferrer" title="Geliştirici" class="text-slate-400 hover:text-indigo-600 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -148,9 +143,9 @@
         const faqButtonsContainer = document.getElementById('faq-buttons');
         const submitButton = chatForm.querySelector('button[type="submit"]');
 
-        // API URL'yi merkezi bir değişken olarak tanımla
-        const API_URL = 'https://uniasistan.social'; // Canlı sunucu adresi
-        // const API_URL = 'http://localhost:8000';   // Yerel geliştirme adresi
+        // API URL for all requests
+        const API_URL = 'https://uniasistan.social'; // Live server address
+        // const API_URL = 'http://localhost:8000';   // Local server address for testing
 
         let isChatStarted = false;
         
@@ -160,7 +155,7 @@
             "Mezuniyet tarihi": "Mezuniyet tarihi hangi durumlarda ve nasıl belirlenir?"
         };
 
-        // Form gönderildiğinde çalışacak fonksiyon
+        // When the user submits a question
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const question = messageInput.value.trim();
@@ -170,16 +165,16 @@
             }
         });
 
-        // Sıkça sorulan sorular butonlarına tıklanınca çalışacak fonksiyon
+        // When the user clicks on a FAQ button
         faqButtonsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('faq-btn')) {
                 const buttonText = e.target.innerText;
-                const question = faqQuestions[buttonText] || buttonText; // Map'ten tam soruyu al
+                const question = faqQuestions[buttonText] || buttonText;
                 handleUserQuestion(question);
             }
         });
 
-        // Kullanıcının sorusunu işleyen ana fonksiyon
+        // Main function to handle user questions
         function handleUserQuestion(question) {
             if (!isChatStarted) {
                 welcomeScreen.classList.add('hidden');
@@ -192,7 +187,7 @@
             fetchBotResponse(question);
         }
 
-        // Mesajları sohbet ekranına ekleyen fonksiyon (HATASI DÜZELTİLMİŞ VERSİYON)
+        // Function to append messages to the chat history
         function appendMessage(message, sender) {
             const messageWrapper = document.createElement('div');
             messageWrapper.classList.add('flex', 'w-full', 'items-end');
@@ -203,29 +198,25 @@
             if (sender === 'user') {
                 messageWrapper.classList.add('justify-end');
                 messageBubble.classList.add('user-bubble', 'bg-gradient-to-br', 'from-indigo-500', 'to-blue-500', 'text-white', 'shadow-indigo-200/80');
-                messageBubble.textContent = message; // Güvenli
-            } else { // 'bot'
+                messageBubble.textContent = message; 
+            } else { 
                 messageWrapper.classList.add('justify-start');
                 const botIcon = document.createElement('div');
                 botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
-                messageWrapper.appendChild(botIcon); // Önce ikonu wrapper'a ekle
+                messageWrapper.appendChild(botIcon); 
 
                 messageBubble.classList.add('bot-bubble', 'bg-white', 'text-slate-800', 'shadow-slate-200/80');
-                messageBubble.innerHTML = message; // Güvenli HTML
+                messageBubble.innerHTML = message;
             }
             
-            // Mesaj balonunu wrapper'a ekle
             messageWrapper.appendChild(messageBubble);
 
-            // --- HATANIN DÜZELTİLDİĞİ YER ---
-            // Hazırlanan tüm mesaj yapısını (wrapper) sohbet geçmişine ekle.
             chatHistory.appendChild(messageWrapper); 
-            // ------------------------------------
             
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        // "Yazıyor..." göstergesini ekleyen fonksiyon
+        // "Yazıyor..." added indicator
         function showTypingIndicator() {
             submitButton.disabled = true;
             messageInput.disabled = true;
@@ -244,7 +235,7 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // "Yazıyor..." göstergesini kaldıran fonksiyon
+        // "Yazıyor..." remove indicator
         function hideTypingIndicator() {
             submitButton.disabled = false;
             messageInput.disabled = false;
@@ -254,9 +245,8 @@
             }
         }
         
-        // BOT CEVABI İÇİN GERÇEK API İSTEĞİ (SON VE DOĞRU VERSİYON)
+        // For fetching the bot's response
         async function fetchBotResponse(question) {
-            // --- DEĞİŞİKLİK 2: Merkezi API_URL değişkenini kullan ---
             const ASK_ENDPOINT = `${API_URL}/ask`;
             
             try {
@@ -286,7 +276,6 @@
                     
                     const sourcesHTML = uniqueSources.map(source => {
                         const encodedSource = encodeURIComponent(source);
-                        // --- DEĞİŞİKLİK 3: İndirme linkini tam URL ile oluştur ---
                         const downloadUrl = `${API_URL}/download_source/${encodedSource}`;
                         
                         return `<li class="break-words"><a href="${downloadUrl}" target="_blank" download class="text-indigo-600 hover:text-indigo-800 hover:underline font-medium">${source}</a></li>`;
@@ -309,5 +298,5 @@
     </script>
 </body>
 </html>
-<!-- Bu HTML dosyası, UniAsistan sohbet uygulamasının temel yapısını ve stilini içerir. -->
-<!-- Tailwind CSS ile responsive ve modern bir tasarım sunar. -->
+<!-- This HTML file consist main architect and still for UniAsistan Project-->
+<!-- It provides a responsive and modern frontend design with Tailwind CSS -->
