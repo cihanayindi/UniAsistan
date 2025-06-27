@@ -58,6 +58,20 @@
         .bot-bubble:hover .copy-btn {
             display: inline-flex; /* Show on hover */
         }
+        /* Message entry animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 flex flex-col items-center justify-center min-h-screen p-4">
@@ -228,7 +242,8 @@
         // Function to append messages to the chat history
         function appendMessage(message, sender) {
             const messageWrapper = document.createElement('div');
-            messageWrapper.classList.add('flex', 'w-full', 'items-end');
+            // Add animation class
+            messageWrapper.classList.add('flex', 'w-full', 'items-end', 'animate-fadeInUp');
 
             const contentBlock = document.createElement('div');
             contentBlock.classList.add('flex', 'flex-col');
@@ -295,7 +310,7 @@
             messageInput.disabled = true;
             const indicatorWrapper = document.createElement('div');
             indicatorWrapper.id = 'typing-indicator';
-            indicatorWrapper.classList.add('flex', 'justify-start', 'w-full', 'items-end');
+            indicatorWrapper.classList.add('flex', 'justify-start', 'w-full', 'items-end', 'animate-fadeInUp'); // Also animate typing indicator
             indicatorWrapper.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 mr-3 flex-shrink-0"></div>
                 <div class="bg-white bot-bubble shadow-md p-4 flex items-center space-x-2">
