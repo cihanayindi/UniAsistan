@@ -49,6 +49,8 @@
         .bot-bubble {
             border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
             position: relative; /* Needed for copy button positioning */
+            word-wrap: break-word; /* Ensure long words do not overflow */
+            overflow-wrap: break-word;
         }
         .copy-btn {
             display: none; /* Hide button by default */
@@ -79,8 +81,11 @@
                 background-color: #cbd5e1;
             }
         }
-        .dark @keyframes pulse-bg {
-             0%, 100% {
+        .dark .animate-pulse-bg {
+            animation: pulse-bg-dark 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-bg-dark {
+            0%, 100% {
                 background-color: #334155;
             }
             50% {
@@ -145,9 +150,19 @@
         <div class="p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 transition-colors duration-300">
             <!-- FAQ Questions -->
             <div id="faq-buttons" class="flex flex-wrap gap-2 mb-4 justify-center">
-                <button class="faq-btn bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">Staj yönergesi</button>
-                <button class="faq-btn bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">Ders kayıtları</button>
-                <button class="faq-btn bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">Mezuniyet şartları</button>
+                <!-- NEW: FAQ Buttons with icons -->
+                <button class="faq-btn flex items-center gap-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    <span>Staj yönergesi</span>
+                </button>
+                <button class="faq-btn flex items-center gap-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <span>Ders kayıtları</span>
+                </button>
+                <button class="faq-btn flex items-center gap-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 font-medium text-sm px-4 py-2 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 hover:shadow-md hover:shadow-indigo-100 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 011.07 0l3.125 1.25a1 1 0 00.788 0l3.125-1.25a1 1 0 011.07 0l2.656-1.062a1 1 0 000-1.84l-7-3zM3.25 9.447l1.07 1.07-1.07 1.07a1 1 0 000 1.414l5 5a1 1 0 001.414 0l1.07-1.07 1.07 1.07a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-1.07-1.07 1.07-1.07a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 0L9 4.586 7.93 3.516a1 1 0 00-1.414 0l-5 5a1 1 0 000 1.414z" /></svg>
+                    <span>Mezuniyet şartları</span>
+                </button>
             </div>
             
             <!-- Question Entry Form -->
@@ -258,8 +273,10 @@
 
         // When the user clicks on a FAQ button
         faqButtonsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('faq-btn')) {
-                const buttonText = e.target.innerText;
+            const faqButton = e.target.closest('.faq-btn');
+            if (faqButton) {
+                // Find the text content, excluding the SVG icon
+                const buttonText = faqButton.querySelector('span').innerText;
                 const question = faqQuestions[buttonText] || buttonText;
                 handleUserQuestion(question);
             }
@@ -306,6 +323,7 @@
                 messageBubble.textContent = message; 
                 contentBlock.appendChild(messageBubble);
             } else { 
+                // This 'else' block is now only for error messages, not regular bot responses
                 messageWrapper.classList.add('justify-start');
                 contentBlock.classList.add('items-start');
 
@@ -315,28 +333,6 @@
 
                 messageBubble.classList.add('bot-bubble', 'bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-slate-200', 'shadow-slate-200/80', 'dark:shadow-slate-900/80');
                 messageBubble.innerHTML = message;
-                
-                // Add copy to clipboard button
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'copy-btn absolute top-2 right-2 p-1 bg-slate-100 dark:bg-slate-600 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-all';
-                copyBtn.title = 'Cevabı kopyala';
-                const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
-                const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
-                
-                copyBtn.innerHTML = copyIconSVG;
-
-                copyBtn.addEventListener('click', () => {
-                    const textToCopy = messageBubble.innerText;
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        copyBtn.innerHTML = checkIconSVG;
-                        setTimeout(() => {
-                            copyBtn.innerHTML = copyIconSVG;
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy: ', err);
-                    });
-                });
-                messageBubble.appendChild(copyBtn);
                 contentBlock.appendChild(messageBubble);
             }
             
@@ -345,11 +341,57 @@
             timestamp.classList.add('text-xs', 'text-slate-400', 'dark:text-slate-500', 'mt-1', 'px-1');
             const now = new Date();
             timestamp.textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            contentBlock.appendChild(timestamp);
+            
+            if (sender === 'user') {
+                 contentBlock.appendChild(timestamp);
+            } else {
+                 // For bot, timestamp will be added after streaming is complete.
+            }
             
             messageWrapper.appendChild(contentBlock);
             chatHistory.appendChild(messageWrapper); 
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // NEW: Function to stream the bot's response with a typing effect
+        function streamResponse(bubbleElement, contentBlock, answer, sourcesHTML) {
+            let fullAnswer = answer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+            let charIndex = 0;
+            const typingSpeed = 20; // milliseconds
+
+            function typeCharacter() {
+                if (charIndex < fullAnswer.length) {
+                    // Check for HTML tags and add them completely
+                    if (fullAnswer.charAt(charIndex) === '<') {
+                        const tagEndIndex = fullAnswer.indexOf('>', charIndex);
+                        if (tagEndIndex !== -1) {
+                            bubbleElement.innerHTML += fullAnswer.substring(charIndex, tagEndIndex + 1);
+                            charIndex = tagEndIndex;
+                        }
+                    } else {
+                        bubbleElement.innerHTML += fullAnswer.charAt(charIndex);
+                    }
+                    charIndex++;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    setTimeout(typeCharacter, typingSpeed);
+                } else {
+                    // Append sources after typing is complete
+                    if (sourcesHTML) {
+                        bubbleElement.innerHTML += sourcesHTML;
+                    }
+
+                    // Add timestamp after everything is rendered
+                    const timestamp = document.createElement('div');
+                    timestamp.classList.add('text-xs', 'text-slate-400', 'dark:text-slate-500', 'mt-1', 'px-1');
+                    const now = new Date();
+                    timestamp.textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                    contentBlock.appendChild(timestamp);
+
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            }
+            
+            typeCharacter();
         }
         
         // Use skeleton loader instead of typing indicator
@@ -387,7 +429,7 @@
             
             try {
                 // Simulate network delay for demo
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // await new Promise(resolve => setTimeout(resolve, 1500));
 
                 const response = await fetch(ASK_ENDPOINT, {
                     method: 'POST',
@@ -403,30 +445,53 @@
                     const errorMessage = data.detail || `API hatası: ${response.statusText} (Kod: ${response.status})`;
                     throw new Error(errorMessage);
                 }
+                
+                // NEW: Create the bot message bubble and start streaming
+                const messageWrapper = document.createElement('div');
+                messageWrapper.classList.add('flex', 'w-full', 'items-end', 'justify-start', 'animate-fadeInUp');
 
-                let formattedAnswer = data.answer
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br>');
+                const botIcon = document.createElement('div');
+                botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
+                messageWrapper.appendChild(botIcon); 
+                
+                const contentBlock = document.createElement('div');
+                contentBlock.classList.add('flex', 'flex-col', 'items-start');
 
-                let fullAnswerHTML = formattedAnswer;
+                const messageBubble = document.createElement('div');
+                messageBubble.classList.add('bot-bubble', 'p-4', 'max-w-xs', 'sm:max-w-md', 'md:max-w-lg', 'shadow-md', 'bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-slate-200', 'shadow-slate-200/80', 'dark:shadow-slate-900/80');
+                
+                // Add copy button
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn absolute top-2 right-2 p-1 bg-slate-100 dark:bg-slate-600 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-all';
+                copyBtn.title = 'Cevabı kopyala';
+                const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+                const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                copyBtn.innerHTML = copyIconSVG;
 
+                copyBtn.addEventListener('click', () => {
+                    const textToCopy = messageBubble.innerText;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        copyBtn.innerHTML = checkIconSVG;
+                        setTimeout(() => { copyBtn.innerHTML = copyIconSVG; }, 2000);
+                    }).catch(err => { console.error('Failed to copy: ', err); });
+                });
+                messageBubble.appendChild(copyBtn);
+                contentBlock.appendChild(messageBubble);
+                messageWrapper.appendChild(contentBlock);
+                chatHistory.appendChild(messageWrapper);
+
+                let sourcesHTML = '';
                 if (data.sources && data.sources.length > 0) {
                     const uniqueSources = [...new Set(data.sources)];
-                    
-                    const sourcesHTML = uniqueSources.map(source => {
+                    const sourcesList = uniqueSources.map(source => {
                         const encodedSource = encodeURIComponent(source);
                         const downloadUrl = `${API_URL}/download_source/${encodedSource}`;
-                        
                         return `<li class="break-words"><a href="${downloadUrl}" target="_blank" download class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline font-medium">${source}</a></li>`;
                     }).join('');
-
-                    fullAnswerHTML += `<div class="mt-4">
-                                       <strong class="dark:text-slate-300">Kaynaklar:</strong>
-                                       <ul class="list-disc list-inside mt-1 space-y-1">${sourcesHTML}</ul>
-                                   </div>`;
+                    sourcesHTML = `<div class="mt-4"><strong class="dark:text-slate-300">Kaynaklar:</strong><ul class="list-disc list-inside mt-1 space-y-1">${sourcesList}</ul></div>`;
                 }
                 
-                appendMessage(fullAnswerHTML, 'bot');
+                streamResponse(messageBubble, contentBlock, data.answer, sourcesHTML);
 
             } catch (error) {
                 console.error("İstek sırasında hata oluştu:", error);
