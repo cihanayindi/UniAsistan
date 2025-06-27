@@ -139,7 +139,7 @@
         </div>
     </div>
 
-    <script>
+        <script>
         // DOM elementlerini seç
         const welcomeScreen = document.getElementById('welcome-screen');
         const chatHistory = document.getElementById('chat-history');
@@ -148,6 +148,11 @@
         const messageInput = document.getElementById('message-input');
         const faqButtonsContainer = document.getElementById('faq-buttons');
         const submitButton = chatForm.querySelector('button[type="submit"]');
+
+        // --- DEĞİŞİKLİK 1: API URL'sini burada merkezi olarak tanımla ---
+        // Canlıya çıkarken bu satırı değiştirmen yeterli olacak.
+        // const API_URL = 'https://uniasistan.social'; // Canlı sunucu adresi
+        const API_URL = 'http://localhost:8000';   // Yerel geliştirme adresi
 
         let isChatStarted = false;
         
@@ -190,7 +195,7 @@
             fetchBotResponse(question);
         }
 
-        // Mesajları sohbet ekranına ekleyen fonksiyon
+        // Mesajları sohbet ekranına ekleyen fonksiyon (HATASI DÜZELTİLMİŞ VERSİYON)
         function appendMessage(message, sender) {
             const messageWrapper = document.createElement('div');
             messageWrapper.classList.add('flex', 'w-full', 'items-end');
@@ -198,25 +203,28 @@
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('p-4', 'max-w-xs', 'sm:max-w-md', 'md:max-w-lg', 'shadow-md');
             
-            // Metni HTML olarak ayarlamadan önce \n'leri <br>'ye ve **'ları <strong>'ye çevir
-            let formattedMessage = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // **Metin** -> <strong>Metin</strong>
-            formattedMessage = formattedMessage.replace(/\n/g, '<br>'); // \n -> <br>
-
-            messageBubble.innerHTML = formattedMessage; // textContent yerine innerHTML
-
             if (sender === 'user') {
                 messageWrapper.classList.add('justify-end');
                 messageBubble.classList.add('user-bubble', 'bg-gradient-to-br', 'from-indigo-500', 'to-blue-500', 'text-white', 'shadow-indigo-200/80');
-            } else {
+                messageBubble.textContent = message; // Güvenli
+            } else { // 'bot'
                 messageWrapper.classList.add('justify-start');
                 const botIcon = document.createElement('div');
                 botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
-                messageWrapper.appendChild(botIcon);
+                messageWrapper.appendChild(botIcon); // Önce ikonu wrapper'a ekle
+
                 messageBubble.classList.add('bot-bubble', 'bg-white', 'text-slate-800', 'shadow-slate-200/80');
+                messageBubble.innerHTML = message; // Güvenli HTML
             }
             
+            // Mesaj balonunu wrapper'a ekle
             messageWrapper.appendChild(messageBubble);
-            chatHistory.appendChild(messageWrapper);
+
+            // --- HATANIN DÜZELTİLDİĞİ YER ---
+            // Hazırlanan tüm mesaj yapısını (wrapper) sohbet geçmişine ekle.
+            chatHistory.appendChild(messageWrapper); 
+            // ------------------------------------
+            
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
@@ -249,52 +257,51 @@
             }
         }
         
-        // BOT CEVABI İÇİN GERÇEK API İSTEĞİ
+        // BOT CEVABI İÇİN GERÇEK API İSTEĞİ (SON VE DOĞRU VERSİYON)
         async function fetchBotResponse(question) {
-            // const API_URL = 'https://uniasistan.social/ask'; // Canlı DigitalOcean API adresi
-            const API_URL = 'http://localhost:8000/ask'; // Geliştirme için yerel API adresi
+            // --- DEĞİŞİKLİK 2: Merkezi API_URL değişkenini kullan ---
+            const ASK_ENDPOINT = `${API_URL}/ask`;
+            
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(ASK_ENDPOINT, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: question
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question }),
                 });
 
-                hideTypingIndicator(); // Yazıyor göstergesini cevaptan önce kaldır
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    // FastAPI'nin detaylı hata mesajını kullan
-                    let detailMessage = "Bilinmeyen API hatası";
-                    if (errorData && errorData.detail) {
-                        if (typeof errorData.detail === 'string') {
-                            detailMessage = errorData.detail;
-                        } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0 && errorData.detail[0].msg) {
-                            // Pydantic validasyon hataları için daha spesifik mesaj
-                            detailMessage = errorData.detail.map(err => `${err.loc.join('.')} - ${err.msg}`).join("; ");
-                        } else {
-                            detailMessage = JSON.stringify(errorData.detail);
-                        }
-                    } else {
-                        detailMessage = `API hatası: ${response.statusText} (Kod: ${response.status})`;
-                    }
-                    throw new Error(detailMessage);
-                }
+                hideTypingIndicator();
 
                 const data = await response.json();
 
-                let fullAnswer = data.answer;
+                if (!response.ok) {
+                    const errorMessage = data.detail || `API hatası: ${response.statusText} (Kod: ${response.status})`;
+                    throw new Error(errorMessage);
+                }
+
+                let formattedAnswer = data.answer
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>');
+
+                let fullAnswerHTML = formattedAnswer;
 
                 if (data.sources && data.sources.length > 0) {
                     const uniqueSources = [...new Set(data.sources)];
-                    fullAnswer += "\n\n**Kaynaklar:**\n- " + uniqueSources.join('\n- ');
-                }
+                    
+                    const sourcesHTML = uniqueSources.map(source => {
+                        const encodedSource = encodeURIComponent(source);
+                        // --- DEĞİŞİKLİK 3: İndirme linkini tam URL ile oluştur ---
+                        const downloadUrl = `${API_URL}/download_source/${encodedSource}`;
+                        
+                        return `<li class="break-words"><a href="${downloadUrl}" target="_blank" download class="text-indigo-600 hover:text-indigo-800 hover:underline font-medium">${source}</a></li>`;
+                    }).join('');
 
-                appendMessage(fullAnswer, 'bot');
+                    fullAnswerHTML += `<div class="mt-4">
+                                       <strong>Kaynaklar:</strong>
+                                       <ul class="list-disc list-inside mt-1 space-y-1">${sourcesHTML}</ul>
+                                   </div>`;
+                }
+                
+                appendMessage(fullAnswerHTML, 'bot');
 
             } catch (error) {
                 console.error("İstek sırasında hata oluştu:", error);
