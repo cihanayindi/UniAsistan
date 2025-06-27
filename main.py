@@ -350,8 +350,6 @@ def ask_question(request: QuestionRequest):
 
     allowed_files = take_filenames_from_sources(categories, CATEGORIES_DATA_PATH) # Kategorilere göre dosya adlarını al
 
-    # logger.info(f"Kategoriler: {categories}, İzin verilen dosyalar: {allowed_files}")
-
     context, sources_rag = get_context_parts(request.question,k=7,allowed_sources=allowed_files) # Cevap için bağlamı ve kaynakları al
 
     prompt = build_prompt(request.question, context) # Prompt'u oluştur
@@ -390,8 +388,6 @@ async def download_source_file(filename: str):
     doğru çalışmasını sağlar. Genelde sadece {filename} yeterlidir.
     """
     try:
-        # Güvenlik önlemi: Path traversal saldırılarını önlemek için.
-        # Dosya adının sadece dosya adı olduğundan ve ../ gibi şeyler içermediğinden emin olalım.
         safe_filename = os.path.basename(filename)
         if safe_filename != filename:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Geçersiz dosya adı.")
@@ -401,14 +397,13 @@ async def download_source_file(filename: str):
         if not file_path.is_file():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dosya bulunamadı.")
         
-        # Dosyayı indirme olarak sun
         return FileResponse(
             path=str(file_path), 
             media_type='application/pdf',
-            filename=safe_filename # Bu, Content-Disposition: attachment; filename="dosya_adi.pdf" başlığını ayarlar
+            filename=safe_filename 
         )
     except HTTPException:
-        raise # FastAPI tarafından zaten oluşturulmuş HTTP hatalarını tekrar fırlat
+        raise 
     except Exception as e:
         print(f"Dosya indirme hatası ({filename}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dosya indirilirken bir sunucu hatası oluştu.")
