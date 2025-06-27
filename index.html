@@ -206,27 +206,40 @@
             const messageWrapper = document.createElement('div');
             messageWrapper.classList.add('flex', 'w-full', 'items-end');
 
+            const contentBlock = document.createElement('div');
+            contentBlock.classList.add('flex', 'flex-col');
+
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('p-4', 'max-w-xs', 'sm:max-w-md', 'md:max-w-lg', 'shadow-md');
             
             if (sender === 'user') {
                 messageWrapper.classList.add('justify-end');
+                contentBlock.classList.add('items-end');
                 messageBubble.classList.add('user-bubble', 'bg-gradient-to-br', 'from-indigo-500', 'to-blue-500', 'text-white', 'shadow-indigo-200/80');
                 messageBubble.textContent = message; 
+                contentBlock.appendChild(messageBubble);
             } else { 
                 messageWrapper.classList.add('justify-start');
+                contentBlock.classList.add('items-start');
+
                 const botIcon = document.createElement('div');
                 botIcon.classList.add('w-8', 'h-8', 'rounded-full', 'bg-gradient-to-r', 'from-indigo-600', 'to-blue-500', 'mr-3', 'flex-shrink-0');
                 messageWrapper.appendChild(botIcon); 
 
                 messageBubble.classList.add('bot-bubble', 'bg-white', 'text-slate-800', 'shadow-slate-200/80');
                 messageBubble.innerHTML = message;
+                contentBlock.appendChild(messageBubble);
             }
             
-            messageWrapper.appendChild(messageBubble);
-
-            chatHistory.appendChild(messageWrapper); 
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.classList.add('text-xs', 'text-slate-400', 'mt-1', 'px-1');
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            contentBlock.appendChild(timestamp);
             
+            messageWrapper.appendChild(contentBlock);
+            chatHistory.appendChild(messageWrapper); 
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
