@@ -2,10 +2,10 @@ import os
 import requests
 
 # PDF'lerin kaydedileceği klasör
-download_folder = r"C:\Users\cihan\Desktop\UniAsistan\source_documents\yeni_pdf"
+download_folder = r"\UniAsistan\source_documents\yeni_pdf"
 
 # Link dosyasının adı
-links_file = "link2.txt"
+links_file = "link.txt"
 
 # Klasör yoksa oluştur
 os.makedirs(download_folder, exist_ok=True)
